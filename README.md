@@ -4,8 +4,12 @@ Java support for the fantastic Ollama project.
 ## JSON stuff.
 This project defines the various POJO's that correspond with the Ollama API documentation.
 
+## Client
+The client class provides some simple support for working with a model via the Ollama server.
+
 ## Chat frame.
 A basic chat application is provided to chat with any model with some additional information.
+It uses the client mentioned above.
 
 ## Model / System interaction (WIP).
 One great aspect of running an LLM locally is that you can permit it to execute programs and
