@@ -6,6 +6,8 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -15,8 +17,10 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 
 /**
  * Main class.
@@ -74,6 +78,236 @@ public class Ollama {
             } catch (Exception ex) {
                 Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, ex);
             }
+        }
+    }
+
+    private boolean startsAndEndsWith(String text, String start, String end) {
+        if (!text.startsWith(start)) {
+            return false;
+        }
+
+        int endIndex = text.lastIndexOf(end);
+        if (endIndex == -1) {
+            return false;
+        }
+
+        String trailingText = text.substring(endIndex + end.length());
+        return trailingText.trim().isEmpty();
+    }
+
+    /**
+     * This function will check the output from the LLM for special cases.
+     * <dl>
+     * <dt>PlantUML</dt><dd>Anything between @startuml and @enduml</dd>
+     * <dt>SVG</dt><dd>Anything between &lt;svg and &lt;/svg&gt;</dd>
+     * <dt>GraphViz</dt><dd>Anything between digraph and }</dd>
+     * <dt>System commands</dt><dd>Anything between $@ and @$</dd>
+     * </dl>
+     *
+     * @param currentText Text to scan.
+     */
+    public void handleOutput(String currentText) {
+        if (startsAndEndsWith(currentText, "@startuml", "@enduml")) { // Check for plantUML content
+            handlePlantUML(currentText);
+        } else if (startsAndEndsWith(currentText, "<svg ", "</svg>")) {// check for SVG content
+            handleSVG(currentText);
+        } else if (startsAndEndsWith(currentText, "digraph", "}")) {// check for GraphViz content
+            handleDOT(currentText);
+        } else {
+            StringBuilder cat = null;
+            while (currentText.contains("$@")) {
+                int cmd = currentText.indexOf("$@");
+                if (cmd >= 0) {
+                    int eoc = currentText.indexOf("@$", cmd);
+                    if (eoc > cmd + 2) {
+                        if (null == cat) {
+                            cat = new StringBuilder();
+                        } else {
+                            cat.append(System.lineSeparator());
+                        }
+                        cat.append(handleCommand(currentText.substring(cmd + 2, eoc)));
+                        currentText = new StringBuilder(currentText).delete(cmd, eoc + 2).toString();
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * This should not be done on the real system but in a Vagrant instance.
+     * //TODO port that code.
+     *
+     * @param cmdString Command to execute.
+     * @return Output of the command.
+     */
+    private String handleCommand(final String cmdString) {
+        final StringBuilder output = new StringBuilder();
+        try {
+            String[] commandArray;
+            if (System.getProperty("os.name").startsWith("Windows")) {
+                commandArray = new String[]{"cmd.exe", "/c", cmdString};
+            } else {
+                commandArray = new String[]{"/bin/bash", "-c", cmdString};
+            }
+
+            ProcessBuilder pb = new ProcessBuilder(commandArray);
+            pb.directory(WORK_DIR);
+            pb.redirectErrorStream(true);
+            final Process process = pb.start();
+
+            Thread outputThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            output.append(line).append("\n");
+                        }
+                    } catch (IOException e) {
+                        Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, e);
+                        output.append("\nYour command ").append(cmdString).append(" caused exception ").append(e.getMessage());
+                    }
+                }
+            });
+            outputThread.start();
+
+            if (process.waitFor(10, TimeUnit.SECONDS)) {
+                outputThread.join(); // Wait for the output reading thread to finish
+            } else {
+                process.destroy();
+                output.append("\nYour command ").append(cmdString).append(" timed out");
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, ex);
+            output.append("\nYour command ").append(cmdString).append(" caused exception ").append(ex.getMessage());
+        }
+        return output.toString();
+    }
+
+    /**
+     * Handles DOT content detected on the clipboard.
+     *
+     * @param currentText The detected DOT content.
+     */
+    private void handleDOT(String currentText) {
+        String filename = JOptionPane.showInputDialog(null, "Filename (without extension):", "PlantUML", JOptionPane.QUESTION_MESSAGE);
+        filename = filename.trim();
+        String fullFilename = filename + ".dot";
+        File outputFile = new File(WORK_DIR, fullFilename);
+
+        // Handle backups
+        if (outputFile.exists()) {
+            File backupFile = new File(WORK_DIR, filename + ".bak");
+            backupFile.delete(); // Delete existing backup
+            outputFile.renameTo(backupFile); // Rename current file to backup
+        }
+
+        // Save the current text to the new file
+        try (FileWriter writer = new FileWriter(outputFile)) {
+            writer.write(currentText);
+        } catch (IOException ex) {
+            Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        // Run Graphviz
+        try {
+            ProcessBuilder pb = new ProcessBuilder("dot", "-Tpng", "-o", filename + ".png", outputFile.getAbsolutePath());
+            pb.directory(WORK_DIR);
+            Process process = pb.start();
+            process.waitFor();
+
+            File pngOutputFile = new File(WORK_DIR, filename + ".png");
+            displayImage(pngOutputFile);
+
+        } catch (Exception e) {
+            Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, e);
+        }
+    }
+
+    /**
+     * Handles SVG content detected on the clipboard.
+     *
+     * @param currentText The detected DOT content.
+     */
+    private void handleSVG(String currentText) {
+        String filename = JOptionPane.showInputDialog(null, "Filename (without extension):", "PlantUML", JOptionPane.QUESTION_MESSAGE);
+        filename = filename.trim();
+        File svgFile = new File(WORK_DIR, filename + ".svg");
+        File pngFile = new File(WORK_DIR, filename + ".png");
+
+        // Handle backups
+        if (svgFile.exists()) {
+            File backupFile = new File(WORK_DIR, filename + ".bak");
+            backupFile.delete(); // Delete existing backup
+            svgFile.renameTo(backupFile); // Rename current file to backup
+        }
+
+        // Save the current text to the new file
+        try (FileWriter writer = new FileWriter(svgFile)) {
+            writer.write(currentText);
+        } catch (IOException ex) {
+            Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        // Run ImageMagick
+        try {
+            ProcessBuilder pb = new ProcessBuilder("convert", svgFile.getAbsolutePath(), pngFile.getAbsolutePath());
+            pb.inheritIO();
+            pb.directory(WORK_DIR);
+            Process process = pb.start();
+            process.waitFor();
+
+            displayImage(pngFile);
+
+        } catch (Exception e) {
+            Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, e);
+        }
+    }
+
+    public void displayImage(File f) {
+        // TODO implement
+    }
+
+    /**
+     * Handles PlantUML content detected on the clipboard.
+     *
+     * @param currentText The detected PlantUML content.
+     */
+    private void handlePlantUML(String currentText) {
+        String filename = JOptionPane.showInputDialog(null, "Filename (without extension):", "PlantUML", JOptionPane.QUESTION_MESSAGE);
+        filename = filename.trim();
+        // If "Cancel" is pressed or no filename is provided
+        if (filename == null || filename.trim().isEmpty()) {
+            return;
+        }
+        String fullFilename = filename + ".txt";
+        File outputFile = new File(WORK_DIR, fullFilename);
+
+        // Handle backups
+        if (outputFile.exists()) {
+            File backupFile = new File(WORK_DIR, filename + ".bak");
+            backupFile.delete(); // Delete existing backup
+            outputFile.renameTo(backupFile); // Rename current file to backup
+        }
+
+        // Save the current text to the new file
+        try (FileWriter writer = new FileWriter(outputFile)) {
+            writer.write(currentText);
+        } catch (IOException ex) {
+            Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        // Run PlantUML with PNG output
+        try {
+            ProcessBuilder pb = new ProcessBuilder("plantuml", "-tpng", outputFile.getAbsolutePath());
+            pb.directory(WORK_DIR);
+            Process process = pb.start();
+            process.waitFor();
+
+            File pngOutputFile = new File(WORK_DIR, filename.trim() + ".png");
+            displayImage(pngOutputFile);
+        } catch (Exception e) {
+            Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, e);
         }
     }
 

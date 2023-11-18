@@ -6,15 +6,47 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.TreeMap;
 
 public class OllamaClient {
 
     private static final String API_GENERATE = "http://localhost:11434/api/generate";
-    private static final TreeMap<String, ArrayList<Integer>> context = new TreeMap<>();
+    private final TreeMap<String, LinkedList<Interaction>> context = new TreeMap<>();
+    private String branch = "default";
 
     public OllamaClient() {
+    }
+
+    /**
+     * Add a branch from the current one.
+     *
+     * @param branchName Name of the branch to add.
+     * @return null or the old contents of the branchName if it was not new.
+     * @throws NullPointerException if you try to branch from nothing.
+     */
+    public LinkedList<Interaction> newBranch(String branchName) {
+        LinkedList<Interaction> nBr = new LinkedList<>(context.get(branch));
+        branch = branchName;
+        return context.put(branchName, nBr);
+    }
+
+    private Integer[] getContext() {
+        LinkedList<Interaction> get = context.get(branch);
+        if (null != get && !get.isEmpty()) {
+            Integer[] ctx = new Integer[0];
+            return get.getLast().response.context.toArray(ctx);
+        }
+        return null;
+    }
+
+    private void addResponse(Request rq, Response resp) {
+        LinkedList<Interaction> get = context.get(branch);
+        if (null == get) {
+            get = new LinkedList<>();
+            context.put(branch, get);
+        }
+        get.add(new Interaction(rq, resp));
     }
 
     public Response askAndAnswer(String model, String prompt) throws Exception {
@@ -23,17 +55,12 @@ public class OllamaClient {
         Request rq = new Request();
         rq.model = model;
         rq.prompt = prompt;
-        Integer[] ctx = new Integer[0];
-        ArrayList<Integer> ctxL = context.get(model);
-        if (null != ctxL) {
-            ctx = ctxL.toArray(ctx);
-        }
-        rq.context = ctx;
+        rq.context = getContext();
         String requestBody = mapper.writeValueAsString(rq);
         String response = sendRequest(requestBody);
 
         Response resp = mapper.readValue(response, Response.class);
-        context.put(model, new ArrayList<>(resp.context));
+        addResponse(rq, resp);
         return resp;
     }
 
@@ -58,25 +85,11 @@ public class OllamaClient {
         rq.model = model;
         rq.prompt = prompt;
         rq.stream = true;
-        Integer[] ctx = new Integer[0];
-        ArrayList<Integer> ctxL = context.get(model);
-        if (null != ctxL) {
-            ctx = ctxL.toArray(ctx);
-        }
-        rq.context = ctx;
+        rq.context = getContext();
         String requestBody = mapper.writeValueAsString(rq);
         Response resp = sendRequestWithStreaming(requestBody, listener);
-        context.put(model, new ArrayList<>(resp.context));
+        addResponse(rq, resp);
         return resp;
-    }
-
-    /**
-     * Clear a model's context.
-     *
-     * @param model to clear the context of.
-     */
-    public void clearContext(String model) {
-        context.put(model, new ArrayList<Integer>());
     }
 
     private String sendRequest(String requestBody) throws Exception {
@@ -149,5 +162,12 @@ public class OllamaClient {
          * @return true to continue, false to stop.
          */
         boolean onResponseReceived(StreamedResponse responsePart);
+    }
+
+    /**
+     * @return the branch
+     */
+    public String getBranch() {
+        return branch;
     }
 }
