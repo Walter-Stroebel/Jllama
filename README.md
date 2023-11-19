@@ -5,7 +5,7 @@ Java support for the fantastic Ollama project.
 This project defines the various POJO's that correspond with the Ollama API documentation.
 
 ## Client
-The client class provides some simple support for working with a model via the Ollama server.
+The client class provides support for working with a model via the Ollama server. This includes branching.
 
 ## Chat frame.
 A basic chat application is provided to chat with any model with some additional information.
