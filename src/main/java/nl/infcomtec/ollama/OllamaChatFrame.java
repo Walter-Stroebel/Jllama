@@ -20,12 +20,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
@@ -62,6 +64,7 @@ public class OllamaChatFrame {
     private JLabel createdAt;
     private JLabel outTokens;
     private JLabel inTokens;
+    private final AtomicBoolean autoMode = new AtomicBoolean(false);
 
     public OllamaChatFrame() {
         client = new OllamaClient();
@@ -130,6 +133,12 @@ public class OllamaChatFrame {
                 html.setVisible(true);
             }
         });
+        buttons.add(new JCheckBox(new AbstractAction("Auto") {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                autoMode.set(((JCheckBox) ae.getSource()).isSelected());
+            }
+        }));
         cont.add(buttons, BorderLayout.NORTH);
         chat = new JTextArea();
         chat.setLineWrap(true);
@@ -278,6 +287,9 @@ public class OllamaChatFrame {
                         try {
                             Response resp = get();
                             updateSideBar(resp);
+                            if (autoMode.get()) {
+                                Ollama.handleOutput(resp.response);
+                            }
                         } catch (Exception ex) {
                             Logger.getLogger(OllamaChatFrame.class.getName()).log(Level.SEVERE, null, ex);
                         }

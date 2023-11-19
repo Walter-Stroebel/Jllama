@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import nl.infcomtec.simpleimage.ImageViewer;
 
 /**
  * Main class.
@@ -81,18 +82,17 @@ public class Ollama {
         }
     }
 
-    private boolean startsAndEndsWith(String text, String start, String end) {
-        if (!text.startsWith(start)) {
-            return false;
+    private static int[] startsAndEndsWith(String text, String start, String end) {
+        int startIndex = text.indexOf(start);
+        if (startIndex < 0) {
+            return null;
         }
 
         int endIndex = text.lastIndexOf(end);
         if (endIndex == -1) {
-            return false;
+            return null;
         }
-
-        String trailingText = text.substring(endIndex + end.length());
-        return trailingText.trim().isEmpty();
+        return new int[]{startIndex, endIndex};
     }
 
     /**
@@ -106,13 +106,20 @@ public class Ollama {
      *
      * @param currentText Text to scan.
      */
-    public void handleOutput(String currentText) {
-        if (startsAndEndsWith(currentText, "@startuml", "@enduml")) { // Check for plantUML content
-            handlePlantUML(currentText);
-        } else if (startsAndEndsWith(currentText, "<svg ", "</svg>")) {// check for SVG content
-            handleSVG(currentText);
-        } else if (startsAndEndsWith(currentText, "digraph", "}")) {// check for GraphViz content
-            handleDOT(currentText);
+    public static void handleOutput(String currentText) {
+        System.out.println("Scanning " + currentText);
+        int[] uml = startsAndEndsWith(currentText, "@startuml", "@enduml"); // Check for plantUML content
+        int[] svg = startsAndEndsWith(currentText, "<", "</svg>"); // check for SVG content
+        int[] dot = startsAndEndsWith(currentText, "digraph", "}");// check for GraphViz content
+        if (null != uml) {
+            handlePlantUML(currentText.substring(uml[0], uml[1]));
+            handleRest(currentText, uml);
+        } else if (null != svg) {
+            handleSVG(currentText.substring(svg[0], svg[1]));
+            handleRest(currentText, svg);
+        } else if (null != dot) {
+            handleDOT(currentText.substring(dot[0], dot[1]));
+            handleRest(currentText, dot);
         } else {
             StringBuilder cat = null;
             while (currentText.contains("$@")) {
@@ -133,6 +140,12 @@ public class Ollama {
         }
     }
 
+    private static void handleRest(String currentText, int[] se) {
+        StringBuilder cat = new StringBuilder(currentText);
+        cat.delete(se[0], se[1]);
+        handleOutput(cat.toString());
+    }
+
     /**
      * This should not be done on the real system but in a Vagrant instance.
      * //TODO port that code.
@@ -140,7 +153,7 @@ public class Ollama {
      * @param cmdString Command to execute.
      * @return Output of the command.
      */
-    private String handleCommand(final String cmdString) {
+    private static String handleCommand(final String cmdString) {
         final StringBuilder output = new StringBuilder();
         try {
             String[] commandArray;
@@ -189,7 +202,8 @@ public class Ollama {
      *
      * @param currentText The detected DOT content.
      */
-    private void handleDOT(String currentText) {
+    private static void handleDOT(String currentText) {
+        // TODO fix
         String filename = JOptionPane.showInputDialog(null, "Filename (without extension):", "PlantUML", JOptionPane.QUESTION_MESSAGE);
         filename = filename.trim();
         String fullFilename = filename + ".dot";
@@ -229,7 +243,8 @@ public class Ollama {
      *
      * @param currentText The detected DOT content.
      */
-    private void handleSVG(String currentText) {
+    private static void handleSVG(String currentText) {
+        // TODO fix
         String filename = JOptionPane.showInputDialog(null, "Filename (without extension):", "PlantUML", JOptionPane.QUESTION_MESSAGE);
         filename = filename.trim();
         File svgFile = new File(WORK_DIR, filename + ".svg");
@@ -264,8 +279,8 @@ public class Ollama {
         }
     }
 
-    public void displayImage(File f) {
-        // TODO implement
+    public static void displayImage(File f) {
+        new ImageViewer(f).getScalePanFrame();
     }
 
     /**
@@ -273,7 +288,8 @@ public class Ollama {
      *
      * @param currentText The detected PlantUML content.
      */
-    private void handlePlantUML(String currentText) {
+    private static void handlePlantUML(String currentText) {
+        // TODO fix
         String filename = JOptionPane.showInputDialog(null, "Filename (without extension):", "PlantUML", JOptionPane.QUESTION_MESSAGE);
         filename = filename.trim();
         // If "Cancel" is pressed or no filename is provided
