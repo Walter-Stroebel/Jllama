@@ -1,7 +1,9 @@
 package nl.infcomtec.ollama;
 
+import java.awt.image.BufferedImage;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.SwingWorker;
 import static nl.infcomtec.ollama.Ollama.WORK_DIR;
 
 /**
@@ -9,14 +11,14 @@ import static nl.infcomtec.ollama.Ollama.WORK_DIR;
  *
  * @author Walter Stroebel
  */
-public class ModalityDOT extends GraphModality {
+public class ModalityDOT extends Modality {
 
     public ModalityDOT(String currentText) {
         super(currentText);
     }
 
     @Override
-    void convert() {
+    protected void convert() {
 
         // Run Graphviz
         try {
@@ -29,6 +31,17 @@ public class ModalityDOT extends GraphModality {
         } catch (Exception e) {
             Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, e);
         }
+    }
+
+    @Override
+    public SwingWorker<BufferedImage, String> getWorker() {
+        return new SwingWorker<BufferedImage, String>() {
+            @Override
+            protected BufferedImage doInBackground() throws Exception {
+                work();
+                return image;
+            }
+        };
     }
 
 }

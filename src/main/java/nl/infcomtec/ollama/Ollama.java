@@ -21,8 +21,6 @@ import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.SwingWorker;
-import nl.infcomtec.simpleimage.ImageViewer;
 
 /**
  * Main class.
@@ -93,7 +91,7 @@ public class Ollama {
         if (endIndex == -1) {
             return null;
         }
-        return new int[]{startIndex, endIndex};
+        return new int[]{startIndex, endIndex + end.length()};
     }
 
     /**
@@ -112,8 +110,9 @@ public class Ollama {
      * @return A list of SwingWorker instances, usually zero or one but can be
      * more.
      */
-    public static List<SwingWorker> handleOutput(String currentText) {
-        LinkedList<SwingWorker> ret = new LinkedList<>();
+    public static List<Modality> handleOutput(String currentText) {
+        System.out.println("Parsing " + currentText);
+        LinkedList<Modality> ret = new LinkedList<>();
         int[] uml = startsAndEndsWith(currentText, "@startuml", "@enduml"); // Check for plantUML content
         int[] svg = startsAndEndsWith(currentText, "<", "</svg>"); // check for SVG content
         int[] dot = startsAndEndsWith(currentText, "digraph", "}");// check for GraphViz content
@@ -147,10 +146,13 @@ public class Ollama {
         return ret;
     }
 
-    private static void handleRest(LinkedList<SwingWorker> ret, String currentText, int[] se) {
+    private static void handleRest(LinkedList<Modality> ret, String currentText, int[] se) {
         StringBuilder cat = new StringBuilder(currentText);
         cat.delete(se[0], se[1]);
-        ret.addAll(handleOutput(cat.toString()));
+        String rest = cat.toString();
+        if (!rest.trim().isEmpty()) {
+            ret.addAll(handleOutput(rest));
+        }
     }
 
     /**
@@ -202,10 +204,6 @@ public class Ollama {
             output.append("\nYour command ").append(cmdString).append(" caused exception ").append(ex.getMessage());
         }
         return output.toString();
-    }
-
-    public static void displayImage(File f) {
-        new ImageViewer(f).getScalePanFrame();
     }
 
     /**

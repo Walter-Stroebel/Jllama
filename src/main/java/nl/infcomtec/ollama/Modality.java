@@ -7,36 +7,37 @@ import javax.imageio.ImageIO;
 import javax.swing.SwingWorker;
 
 /**
- * Base class for graphics modalities.
+ * Base class for modalities.
  *
- * The way this works is we instruct the model to output some text that is
- * actually an image. Like a SVG file, a GraphViz DOT file or a PlantUML
- * description.
+ * The way this works is we instruct the model to output some text that is for
+ * instance actually an image. Like a SVG file, a GraphViz DOT file or a
+ * PlantUML description.
  *
  * We then display said text in a small JTextArea so the user can tweak it and
  * press a button to view the result.
  *
- * The button will call an external tool to generate an image, load the image
- * and show it in a preview pane.
+ * The button will call an external tool to do the work like generating an
+ * image, load the result and show it in a preview pane.
  *
  * Implementations of this base class provide the SwingWorker instances for the
  * conversions above.
  *
  * @author Walter Stroebel
  */
-public abstract class GraphModality extends SwingWorker<BufferedImage, String> {
+public abstract class Modality {
 
     protected File outputFile;
     protected File pngOutputFile;
-    protected BufferedImage ret;
-    protected final String currentText;
+    protected BufferedImage image;
+    protected String currentText;
+    public final boolean isGraphical;
 
-    public GraphModality(String currentText) {
+    public Modality(String currentText) {
         this.currentText = currentText;
+        isGraphical = true;
     }
 
-    @Override
-    protected BufferedImage doInBackground() throws Exception {
+    protected BufferedImage work() throws Exception {
         try {
             outputFile = File.createTempFile("temp", ".txt");
             pngOutputFile = new File(
@@ -46,17 +47,30 @@ public abstract class GraphModality extends SwingWorker<BufferedImage, String> {
                 writer.write(currentText);
             }
             convert();
-            ret = ImageIO.read(pngOutputFile);
+            image = ImageIO.read(pngOutputFile);
         } finally {
             outputFile.delete();
             pngOutputFile.delete();
         }
-        return ret;
+        return image;
+    }
+
+    public BufferedImage getImage() {
+        while (null == image) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        return image;
     }
 
     /**
      * Implement the actual conversion here.
      */
-    abstract void convert();
+    protected abstract void convert();
+
+    public abstract SwingWorker<BufferedImage, String> getWorker();
 
 }

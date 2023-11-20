@@ -20,6 +20,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -65,6 +67,7 @@ public class OllamaChatFrame {
     private JLabel outTokens;
     private JLabel inTokens;
     private final AtomicBoolean autoMode = new AtomicBoolean(false);
+    private final ExecutorService pool = Executors.newCachedThreadPool();
 
     public OllamaChatFrame() {
         client = new OllamaClient();
@@ -288,7 +291,15 @@ public class OllamaChatFrame {
                             Response resp = get();
                             updateSideBar(resp);
                             if (autoMode.get()) {
-                                Ollama.handleOutput(resp.response);
+                                List<Modality> mods = Ollama.handleOutput(resp.response);
+                                if (!mods.isEmpty()) {
+                                    for (Modality mod : mods) {
+                                        pool.submit(mod.getWorker());
+                                        if (mod.isGraphical) {
+                                            new TextImage(mod.getClass().getSimpleName(), mod);
+                                        }
+                                    }
+                                }
                             }
                         } catch (Exception ex) {
                             Logger.getLogger(OllamaChatFrame.class.getName()).log(Level.SEVERE, null, ex);
