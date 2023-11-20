@@ -73,4 +73,8 @@ public abstract class Modality {
 
     public abstract SwingWorker<BufferedImage, String> getWorker();
 
+    public void setCurrentText(String newText) {
+        currentText = newText;
+        image = null;
+    }
 }
