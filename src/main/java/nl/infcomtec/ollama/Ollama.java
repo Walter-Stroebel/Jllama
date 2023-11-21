@@ -30,8 +30,8 @@ import java.util.logging.Logger;
  */
 public class Ollama {
 
-    static boolean streaming = false;
-    static boolean chatMode = true;
+    static boolean streaming = true;
+    static boolean chatMode = false;
     public static final File HOME_DIR = new File(System.getProperty("user.home"));
     public static final File WORK_DIR = new File(HOME_DIR, ".ollama.data");
     private static final String API_TAGS = "http://localhost:11434/api/tags";
@@ -44,17 +44,10 @@ public class Ollama {
             + " Please tell me about yourself?";
 
     public static void main(String[] args) {
-        // test vagrant
-        {
-            vagrant = new Vagrant();
-            vagrant.start();
-            System.out.println(vagrant.exec("$#uptime#$"));
-            System.out.println(vagrant.log);
-        }
         if (!WORK_DIR.exists()) {
             WORK_DIR.mkdirs();
         }
-        if (!isServiceRunning()) {
+        if (!isServiceRunning(API_TAGS)) {
             System.out.println("Linux: sudo systemctl start ollama");
             System.exit(2);
         }
@@ -65,7 +58,8 @@ public class Ollama {
         if (chatMode) {
             new OllamaChatFrame();
         } else {
-            String model = getAvailableModels().first();
+            String model = getAvailableModels(API_TAGS).first();
+            System.out.println("Using model " + model);
             OllamaClient client = new OllamaClient();
             try {
                 if (!streaming) {
@@ -164,11 +158,12 @@ public class Ollama {
     /**
      * Fetch the known models.
      *
+     * @param endPoint End point for the Ollama service.
      * @return See Ollama API doc.
      * @throws Exception Of course.
      */
-    public static AvailableModels fetchAvailableModels() throws Exception {
-        URL url = new URL(API_TAGS);
+    public static AvailableModels fetchAvailableModels(String endPoint) throws Exception {
+        URL url = new URL(endPoint);
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("GET");
 
@@ -190,10 +185,20 @@ public class Ollama {
      * @return Set of model names with tags.
      */
     public static SortedSet<String> getAvailableModels() {
+        return getAvailableModels(API_TAGS);
+    }
+
+    /**
+     * Fetch the known models.
+     *
+     * @param endPoint End point for the Ollama service.
+     * @return Set of model names with tags.
+     */
+    public static SortedSet<String> getAvailableModels(String endPoint) {
         TreeSet<String> ret = new TreeSet<>();
         try {
             AvailableModels availableModels;
-            availableModels = fetchAvailableModels();
+            availableModels = fetchAvailableModels(endPoint);
             for (AvailableModels.AvailableModel am : availableModels.models) {
                 ret.add(am.name);
             }
@@ -209,9 +214,9 @@ public class Ollama {
      * @return true if the service is running (models can be fetched), false
      * otherwise.
      */
-    private static boolean isServiceRunning() {
+    private static boolean isServiceRunning(String endPoint) {
         try {
-            AvailableModels availableModels = fetchAvailableModels();
+            AvailableModels availableModels = fetchAvailableModels(endPoint);
             Logger.getLogger(Ollama.class.getName()).log(Level.INFO, "Ollama service is running: {0}", availableModels.toString());
             return true;
         } catch (Exception ex) {

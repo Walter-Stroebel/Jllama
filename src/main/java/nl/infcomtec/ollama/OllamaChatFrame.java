@@ -295,7 +295,7 @@ public class OllamaChatFrame {
                                 if (!mods.isEmpty()) {
                                     for (Modality mod : mods) {
                                         if (mod.isGraphical) {
-                                            new TextImage(mod.getClass().getSimpleName(), mod);
+                                            new TextImage(pool, mod.getClass().getSimpleName(), mod);
                                         } else {
                                             System.out.println(mod.getText());
                                         }

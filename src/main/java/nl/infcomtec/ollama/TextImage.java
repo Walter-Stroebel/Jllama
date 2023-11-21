@@ -6,6 +6,7 @@ import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
+import java.util.concurrent.ExecutorService;
 import javax.swing.AbstractAction;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
@@ -23,7 +24,7 @@ public class TextImage {
     public final ImageObject imgObj;
     private final Modality worker;
 
-    public TextImage(String title, Modality grpMod) throws Exception {
+    public TextImage(final ExecutorService pool, String title, Modality grpMod) throws Exception {
         worker = grpMod;
         frame = new JFrame(title);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -34,11 +35,10 @@ public class TextImage {
         AbstractAction updateAction = new AbstractAction("Update") {
             @Override
             public void actionPerformed(ActionEvent ae) {
-                worker.setCurrentText(text.getText());
+                worker.setCurrentText(pool, text.getText());
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        worker.getWorker().execute();
                         imgObj.putImage(worker.getImage());
                     }
                 }).start();
