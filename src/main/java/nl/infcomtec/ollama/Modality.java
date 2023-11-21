@@ -3,78 +3,153 @@ package nl.infcomtec.ollama;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileWriter;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Semaphore;
 import javax.imageio.ImageIO;
-import javax.swing.SwingWorker;
 
 /**
  * Base class for modalities.
  *
- * The way this works is we instruct the model to output some text that is for
- * instance actually an image. Like a SVG file, a GraphViz DOT file or a
- * PlantUML description.
+ * The way this works is, when we instruct the model to output some text that
+ * is, for instance, actually an image (like a SVG file, a GraphViz DOT file or
+ * a PlantUML description), but also any other external task, this will
+ * encapsulate that action.
  *
- * We then display said text in a small JTextArea so the user can tweak it and
- * press a button to view the result.
+ * An (external) tool will do the work, like generating an image.
  *
- * The button will call an external tool to do the work like generating an
- * image, load the result and show it in a preview pane.
+ * The result can be fetched using getImage() or getText() once the task is
+ * done.
  *
- * Implementations of this base class provide the SwingWorker instances for the
- * conversions above.
+ * The task can be repeated by calling setCurrentText(), this is meant for
+ * editing.
+ *
+ * This "should just work", in case it does not, the member "oops" might hold
+ * the Exception why not.
  *
  * @author Walter Stroebel
  */
-public abstract class Modality {
+public abstract class Modality implements Runnable {
 
     protected File outputFile;
     protected File pngOutputFile;
     protected BufferedImage image;
     protected String currentText;
+    protected String outputText;
     public final boolean isGraphical;
+    public Exception oops;
+    protected Semaphore done = new Semaphore(0);
 
-    public Modality(String currentText) {
-        this.currentText = currentText;
-        isGraphical = true;
+    /**
+     * Initialize and run the task.
+     *
+     * @param pool To run the conversion.
+     * @param currentText
+     */
+    public Modality(ExecutorService pool, String currentText) {
+        this(pool, currentText, false);
     }
 
-    protected BufferedImage work() throws Exception {
+    /**
+     * Initialize and run the task.
+     *
+     * @param pool To run the conversion.
+     * @param currentText
+     * @param isGraph Whether or not the task creates an image.
+     */
+    public Modality(ExecutorService pool, String currentText, boolean isGraph) {
+        this.currentText = currentText;
+        isGraphical = isGraph;
+        pool.submit(this);
+    }
+
+    @Override
+    public void run() {
         try {
             outputFile = File.createTempFile("temp", ".txt");
-            pngOutputFile = new File(
-                    outputFile.getParentFile(),
-                    outputFile.getName().replace(".txt", ".png"));
+            if (isGraphical) {
+                pngOutputFile = new File(
+                        outputFile.getParentFile(),
+                        outputFile.getName().replace(".txt", ".png"));
+            }
             try (FileWriter writer = new FileWriter(outputFile)) {
                 writer.write(currentText);
             }
             convert();
-            image = ImageIO.read(pngOutputFile);
+            if (isGraphical) {
+                image = ImageIO.read(pngOutputFile);
+            }
+        } catch (Exception any) {
+            oops = any;
+            outputText = any.getMessage();
         } finally {
-            outputFile.delete();
-            pngOutputFile.delete();
+            if (null != outputFile) {
+                outputFile.delete();
+            }
+            outputFile = null;
+            if (null != pngOutputFile) {
+                pngOutputFile.delete();
+            }
+            pngOutputFile = null;
+            done.release();
         }
-        return image;
     }
 
+    /**
+     * Get the image produced.
+     *
+     * This might block and might return null
+     *
+     * @return The image.
+     */
     public BufferedImage getImage() {
-        while (null == image) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-            }
+        try {
+            done.acquire();
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        } finally {
+            done.release();
         }
         return image;
     }
 
     /**
-     * Implement the actual conversion here.
+     * Get the text produced.
+     *
+     * This might block and might return null
+     *
+     * @return The text.
+     */
+    public String getText() {
+        try {
+            done.acquire();
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        } finally {
+            done.release();
+        }
+        return outputText;
+    }
+
+    /**
+     * Implement the actual conversion or execution here.
      */
     protected abstract void convert();
 
-    public abstract SwingWorker<BufferedImage, String> getWorker();
-
-    public void setCurrentText(String newText) {
+    /**
+     * Re-run with a new text.
+     *
+     * @param pool To run the conversion.
+     * @param newText The new or altered text.
+     */
+    public void setCurrentText(ExecutorService pool, String newText) {
+        try {
+            done.acquire();
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
         currentText = newText;
         image = null;
+        outputText = null;
+        pool.submit(this);
     }
 }

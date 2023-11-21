@@ -1,10 +1,9 @@
 package nl.infcomtec.ollama;
 
-import java.awt.image.BufferedImage;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
-import javax.swing.SwingWorker;
 import static nl.infcomtec.ollama.Ollama.WORK_DIR;
 
 /**
@@ -14,8 +13,8 @@ import static nl.infcomtec.ollama.Ollama.WORK_DIR;
  */
 public class ModalityUML extends Modality {
 
-    public ModalityUML(String currentText) {
-        super(currentText);
+    public ModalityUML(ExecutorService pool, String currentText) {
+        super(pool, currentText);
     }
 
     @Override
@@ -31,17 +30,6 @@ public class ModalityUML extends Modality {
         } catch (Exception e) {
             Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, e);
         }
-    }
-
-    @Override
-    public SwingWorker<BufferedImage, String> getWorker() {
-        return new SwingWorker<BufferedImage, String>() {
-            @Override
-            protected BufferedImage doInBackground() throws Exception {
-                work();
-                return image;
-            }
-        };
     }
 
 }

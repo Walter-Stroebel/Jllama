@@ -291,12 +291,13 @@ public class OllamaChatFrame {
                             Response resp = get();
                             updateSideBar(resp);
                             if (autoMode.get()) {
-                                List<Modality> mods = Ollama.handleOutput(resp.response);
+                                List<Modality> mods = Ollama.handleOutput(pool, resp.response);
                                 if (!mods.isEmpty()) {
                                     for (Modality mod : mods) {
-                                        pool.submit(mod.getWorker());
                                         if (mod.isGraphical) {
                                             new TextImage(mod.getClass().getSimpleName(), mod);
+                                        } else {
+                                            System.out.println(mod.getText());
                                         }
                                     }
                                 }

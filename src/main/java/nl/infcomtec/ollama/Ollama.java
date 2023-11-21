@@ -6,7 +6,6 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -18,7 +17,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,6 +44,13 @@ public class Ollama {
             + " Please tell me about yourself?";
 
     public static void main(String[] args) {
+        // test vagrant
+        {
+            vagrant = new Vagrant();
+            vagrant.start();
+            System.out.println(vagrant.exec("$#uptime#$"));
+            System.out.println(vagrant.log);
+        }
         if (!WORK_DIR.exists()) {
             WORK_DIR.mkdirs();
         }
@@ -103,107 +109,42 @@ public class Ollama {
      * <dt>System commands</dt><dd>Anything between $@ and @$</dd>
      * </dl>
      *
-     * Each occurrence of special text will be used to create a SwingWorker for
-     * that text, the caller is expected to execute those.
-     *
+     * @param pool The service that will run the threads.
      * @param currentText Text to scan.
-     * @return A list of SwingWorker instances, usually zero or one but can be
+     * @return A list of Modality instances, usually zero or one but can be
      * more.
      */
-    public static List<Modality> handleOutput(String currentText) {
+    public static List<Modality> handleOutput(ExecutorService pool, String currentText) {
         System.out.println("Parsing " + currentText);
         LinkedList<Modality> ret = new LinkedList<>();
         int[] uml = startsAndEndsWith(currentText, "@startuml", "@enduml"); // Check for plantUML content
         int[] svg = startsAndEndsWith(currentText, "<", "</svg>"); // check for SVG content
         int[] dot = startsAndEndsWith(currentText, "digraph", "}");// check for GraphViz content
         if (null != uml) {
-            ret.add(new ModalityUML(currentText.substring(uml[0], uml[1])));
-            handleRest(ret, currentText, uml);
+            ret.add(new ModalityUML(pool, currentText.substring(uml[0], uml[1])));
+            handleRest(pool, ret, currentText, uml);
         } else if (null != svg) {
-            ret.add(new ModalitySVG(currentText.substring(svg[0], svg[1])));
-            handleRest(ret, currentText, svg);
+            ret.add(new ModalitySVG(pool, currentText.substring(svg[0], svg[1])));
+            handleRest(pool, ret, currentText, svg);
         } else if (null != dot) {
-            ret.add(new ModalityDOT(currentText.substring(dot[0], dot[1])));
-            handleRest(ret, currentText, dot);
+            ret.add(new ModalityDOT(pool, currentText.substring(dot[0], dot[1])));
+            handleRest(pool, ret, currentText, dot);
         } else {
-            StringBuilder cat = null;
-            while (currentText.contains("$@")) {
-                int cmd = currentText.indexOf("$@");
-                if (cmd >= 0) {
-                    int eoc = currentText.indexOf("@$", cmd);
-                    if (eoc > cmd + 2) {
-                        if (null == cat) {
-                            cat = new StringBuilder();
-                        } else {
-                            cat.append(System.lineSeparator());
-                        }
-                        cat.append(handleCommand(currentText.substring(cmd + 2, eoc)));
-                        currentText = new StringBuilder(currentText).delete(cmd, eoc + 2).toString();
-                    }
-                }
+            if (currentText.contains(Vagrant.MARK_START)) {
+                ret.add(new ModalityVagrant(pool, currentText));
             }
         }
         return ret;
     }
+    public static Vagrant vagrant;
 
-    private static void handleRest(LinkedList<Modality> ret, String currentText, int[] se) {
+    private static void handleRest(ExecutorService pool, LinkedList<Modality> ret, String currentText, int[] se) {
         StringBuilder cat = new StringBuilder(currentText);
         cat.delete(se[0], se[1]);
         String rest = cat.toString();
         if (!rest.trim().isEmpty()) {
-            ret.addAll(handleOutput(rest));
+            ret.addAll(handleOutput(pool, rest));
         }
-    }
-
-    /**
-     * This should not be done on the real system but in a Vagrant instance.
-     * //TODO port that code.
-     *
-     * @param cmdString Command to execute.
-     * @return Output of the command.
-     */
-    private static String handleCommand(final String cmdString) {
-        final StringBuilder output = new StringBuilder();
-        try {
-            String[] commandArray;
-            if (System.getProperty("os.name").startsWith("Windows")) {
-                commandArray = new String[]{"cmd.exe", "/c", cmdString};
-            } else {
-                commandArray = new String[]{"/bin/bash", "-c", cmdString};
-            }
-
-            ProcessBuilder pb = new ProcessBuilder(commandArray);
-            pb.directory(WORK_DIR);
-            pb.redirectErrorStream(true);
-            final Process process = pb.start();
-
-            Thread outputThread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            output.append(line).append("\n");
-                        }
-                    } catch (IOException e) {
-                        Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, e);
-                        output.append("\nYour command ").append(cmdString).append(" caused exception ").append(e.getMessage());
-                    }
-                }
-            });
-            outputThread.start();
-
-            if (process.waitFor(10, TimeUnit.SECONDS)) {
-                outputThread.join(); // Wait for the output reading thread to finish
-            } else {
-                process.destroy();
-                output.append("\nYour command ").append(cmdString).append(" timed out");
-            }
-        } catch (Exception ex) {
-            Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, ex);
-            output.append("\nYour command ").append(cmdString).append(" caused exception ").append(ex.getMessage());
-        }
-        return output.toString();
     }
 
     /**

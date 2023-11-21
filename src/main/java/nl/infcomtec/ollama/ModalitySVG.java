@@ -1,9 +1,8 @@
 package nl.infcomtec.ollama;
 
-import java.awt.image.BufferedImage;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.SwingWorker;
 
 /**
  * Converts text to image if text is valid SVG.
@@ -12,8 +11,8 @@ import javax.swing.SwingWorker;
  */
 public class ModalitySVG extends Modality {
 
-    public ModalitySVG(String currentText) {
-        super(currentText);
+    public ModalitySVG(ExecutorService pool, String currentText) {
+        super(pool, currentText);
     }
 
     @Override
@@ -28,17 +27,6 @@ public class ModalitySVG extends Modality {
         } catch (Exception e) {
             Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, e);
         }
-    }
-
-    @Override
-    public SwingWorker<BufferedImage, String> getWorker() {
-        return new SwingWorker<BufferedImage, String>() {
-            @Override
-            protected BufferedImage doInBackground() throws Exception {
-                work();
-                return image;
-            }
-        };
     }
 
 }
