@@ -46,7 +46,7 @@ public abstract class Modality implements Runnable {
      * @param currentText
      */
     public Modality(ExecutorService pool, String currentText) {
-        this(pool, currentText, false);
+        this(pool, currentText, true);
     }
 
     /**

@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 public class Ollama {
 
     static boolean streaming = true;
-    static boolean chatMode = false;
+    static boolean chatMode = true;
     public static final File HOME_DIR = new File(System.getProperty("user.home"));
     public static final File WORK_DIR = new File(HOME_DIR, ".ollama.data");
     private static final String API_TAGS = "http://localhost:11434/api/tags";
