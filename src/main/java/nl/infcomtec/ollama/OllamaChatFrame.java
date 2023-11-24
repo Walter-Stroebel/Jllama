@@ -9,12 +9,10 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.io.File;
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -58,10 +56,9 @@ public class OllamaChatFrame {
     private final JToolBar buttons;
     private final JTextArea chat;
     private final JTextArea input;
-    private final OllamaClient client;
+    private OllamaClient client;
+    private final JComboBox<String> hosts;
     private final JComboBox<String> models;
-    private ChatConfig config;
-    private static final File configFile = new File(Ollama.WORK_DIR, "chatcfg.json");
     private JLabel curCtxSize;
     private JLabel createdAt;
     private JLabel outTokens;
@@ -70,27 +67,7 @@ public class OllamaChatFrame {
     private final ExecutorService pool = Executors.newCachedThreadPool();
 
     public OllamaChatFrame() {
-        client = new OllamaClient();
-        try {
-            if (configFile.exists()) {
-                config = Ollama.getMapper().readValue(configFile, ChatConfig.class);
-            }
-        } catch (Exception any) {
-            config = null;
-        }
-        if (null == config) {
-            config = new ChatConfig();
-            config.x = config.y = 0;
-            config.w = 1000;
-            config.h = 700;
-            config.fontSize = 18;
-            try {
-                Ollama.getMapper().writeValue(configFile, config);
-            } catch (IOException ex) {
-                Logger.getLogger(OllamaChatFrame.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-        setupGUI(config.fontSize);
+        setupGUI(Ollama.config.fontSize);
         frame = new JFrame("Ollama chat");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         Container cont = frame.getContentPane();
@@ -102,16 +79,31 @@ public class OllamaChatFrame {
                 System.exit(0);
             }
         });
+        buttons.add(new JToolBar.Separator());
+        hosts = new JComboBox<>();
         models = new JComboBox<>();
         String fm = null;
-        for (String mn : Ollama.getAvailableModels()) {
-            models.addItem(mn);
-            if (null == fm) {
-                fm = mn;
+        for (Map.Entry<String, AvailableModels> e : Ollama.fetchAvailableModels().entrySet()) {
+            addToHosts(e.getKey());
+            if (0 == models.getItemCount()) {
+                for (AvailableModels.AvailableModel am : e.getValue().models) {
+                    models.addItem(am.name);
+                    if (null == fm) {
+                        fm = am.name;
+                    }
+                }
             }
         }
+        client = new OllamaClient(hosts.getItemAt(0));
         models.setSelectedItem(fm);
+        hosts.addActionListener(new AddSelectHost());
+        hosts.setEditable(true);
+        buttons.add(new JLabel("Hosts:"));
+        buttons.add(hosts);
+        buttons.add(new JToolBar.Separator());
+        buttons.add(new JLabel("Models:"));
         buttons.add(models);
+        buttons.add(new JToolBar.Separator());
         buttons.add(new AbstractAction("HTML") {
             @Override
             public void actionPerformed(ActionEvent ae) {
@@ -125,7 +117,7 @@ public class OllamaChatFrame {
                     @Override
                     public StyleSheet getStyleSheet() {
                         StyleSheet styleSheet = super.getStyleSheet();
-                        styleSheet.addRule("body { font-family: 'Arial'; font-size: " + Math.round(config.fontSize) + "pt; }");
+                        styleSheet.addRule("body { font-family: 'Arial'; font-size: " + Math.round(Ollama.config.fontSize) + "pt; }");
                         return styleSheet;
                     }
                 };
@@ -136,6 +128,7 @@ public class OllamaChatFrame {
                 html.setVisible(true);
             }
         });
+        buttons.add(new JToolBar.Separator());
         buttons.add(new JCheckBox(new AbstractAction("Auto") {
             @Override
             public void actionPerformed(ActionEvent ae) {
@@ -183,6 +176,18 @@ public class OllamaChatFrame {
         }
     }
 
+    private void addToHosts(String host) {
+        for (int i = 0; i < hosts.getItemCount(); i++) {
+            if (hosts.getItemAt(i).equalsIgnoreCase(host)) {
+                return;
+            }
+        }
+        hosts.addItem(host);
+        if (1 == hosts.getItemCount()) {
+            hosts.setSelectedItem(host);
+        }
+    }
+
     private JPanel sideBar() {
         JPanel ret = new JPanel();
         curCtxSize = new JLabel();
@@ -219,7 +224,7 @@ public class OllamaChatFrame {
         ret.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(new Color(70, 206, 80), 5),
                 "Session"));
-        ret.setPreferredSize(new Dimension(config.w / 4, config.h));
+        ret.setPreferredSize(new Dimension(Ollama.config.w / 4, Ollama.config.h));
         return ret;
     }
 
@@ -232,16 +237,16 @@ public class OllamaChatFrame {
 
     private void finishInit() {
         frame.setVisible(true);
-        frame.setBounds(config.x, config.y, config.w, config.h);
+        frame.setBounds(Ollama.config.x, Ollama.config.y, Ollama.config.w, Ollama.config.h);
         frame.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentMoved(ComponentEvent e) {
-                config.update(frame.getBounds());
+                Ollama.config.update(frame.getBounds());
             }
 
             @Override
             public void componentResized(ComponentEvent e) {
-                config.update(frame.getBounds());
+                Ollama.config.update(frame.getBounds());
             }
         });
     }
@@ -327,21 +332,40 @@ public class OllamaChatFrame {
         }
     }
 
-    public static class ChatConfig {
+    private class AddSelectHost implements ActionListener {
 
-        public int x, y, w, h; // of the chat window
-        public float fontSize; // to keep things readable
+        public AddSelectHost() {
+        }
 
-        public void update(Rectangle bounds) {
-            x = bounds.x;
-            y = bounds.y;
-            w = bounds.width;
-            h = bounds.height;
-            try {
-                Ollama.getMapper().writeValue(configFile, this);
-            } catch (IOException ex) {
-                Logger.getLogger(OllamaChatFrame.class.getName()).log(Level.SEVERE, null, ex);
+        @Override
+        public void actionPerformed(ActionEvent ae) {
+            String selHost = (String) hosts.getEditor().getItem();
+            if (!selHost.isEmpty()) {
+                addToHosts(selHost);
+                int n = hosts.getItemCount();
+                Ollama.config.ollamas = new String[n];
+                for (int i = 0; i < n; i++) {
+                    Ollama.config.ollamas[i] = hosts.getItemAt(i);
+                }
+                hosts.setSelectedItem(selHost);
+                Ollama.config.update();
+                String fmod = null;
+                for (Map.Entry<String, AvailableModels> e : Ollama.fetchAvailableModels().entrySet()) {
+                    addToHosts(e.getKey());
+                    if (e.getKey().equals(selHost)) {
+                        models.removeAllItems();
+                        for (AvailableModels.AvailableModel am : e.getValue().models) {
+                            models.addItem(am.name);
+                            if (null == fmod) {
+                                fmod = am.name;
+                            }
+                        }
+                        models.setSelectedItem(fmod);
+                    }
+                }
+                client = new OllamaClient(selHost);
             }
         }
     }
+
 }

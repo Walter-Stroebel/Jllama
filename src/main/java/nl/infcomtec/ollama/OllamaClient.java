@@ -11,17 +11,13 @@ import java.util.TreeMap;
 
 public class OllamaClient {
 
-    private static final String LOCAL_GENERATE = "http://localhost:11434/api/generate";
+    private static final String GENERATE = "/api/generate";
     private final String API_GENERATE;
     private final TreeMap<String, LinkedList<Interaction>> context = new TreeMap<>();
     private String branch = "default";
 
-    public OllamaClient() {
-        this(LOCAL_GENERATE);
-    }
-
     public OllamaClient(String endPoint) {
-        API_GENERATE = endPoint;
+        API_GENERATE = endPoint + GENERATE;
     }
 
     /**

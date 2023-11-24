@@ -1,6 +1,7 @@
 package nl.infcomtec.ollama;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
@@ -15,8 +16,8 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,11 +31,9 @@ import java.util.logging.Logger;
  */
 public class Ollama {
 
-    static boolean streaming = true;
-    static boolean chatMode = true;
     public static final File HOME_DIR = new File(System.getProperty("user.home"));
     public static final File WORK_DIR = new File(HOME_DIR, ".ollama.data");
-    private static final String API_TAGS = "http://localhost:11434/api/tags";
+    private static final String LOCAL_ENDPOINT = "http://localhost:11434";
     private static final DateTimeFormatter formatter = new DateTimeFormatterBuilder()
             .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
             .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
@@ -42,27 +41,46 @@ public class Ollama {
             .toFormatter();
     public static final String DEFAULT_QUESTION = "Hello, I am really excited to talk to you!"
             + " Please tell me about yourself?";
+    public static final File configFile = new File(Ollama.WORK_DIR, "chatcfg.json");
+    public static Config config;
 
     public static void main(String[] args) {
         if (!WORK_DIR.exists()) {
             WORK_DIR.mkdirs();
         }
-        if (!isServiceRunning(API_TAGS)) {
-            System.out.println("Linux: sudo systemctl start ollama");
+        try {
+            if (configFile.exists()) {
+                config = getMapper().readValue(configFile, Config.class);
+            }
+            if (null == config.ollamas) {
+                config.ollamas = new String[]{LOCAL_ENDPOINT};
+                config.update();
+            }
+        } catch (Exception any) {
+            config = null;
+        }
+        if (null == config) {
+            config = new Config();
+            config.x = config.y = 0;
+            config.w = 1000;
+            config.h = 700;
+            config.fontSize = 18;
+            config.ollamas = new String[]{LOCAL_ENDPOINT};
+            config.update();
+        }
+        if (fetchAvailableModels().isEmpty()) {
+            System.out.println("Nothing found. Suggestion: ollama run mistral");
             System.exit(2);
         }
-        if (getAvailableModels().isEmpty()) {
-            System.out.println("Commandline: ollama run mistral");
-            System.exit(2);
-        }
-        if (chatMode) {
+        if (config.chatMode) {
             new OllamaChatFrame();
         } else {
-            String model = getAvailableModels(API_TAGS).first();
-            System.out.println("Using model " + model);
-            OllamaClient client = new OllamaClient();
             try {
-                if (!streaming) {
+                Map.Entry<String, AvailableModels> first = fetchAvailableModels().firstEntry();
+                String model = first.getValue().models[0].name;
+                System.out.println("Using model " + model);
+                OllamaClient client = new OllamaClient(first.getKey());
+                if (!config.streaming) {
                     Response answer = client.askAndAnswer(model, DEFAULT_QUESTION);
                     System.out.println(answer);
                 } else {
@@ -147,7 +165,7 @@ public class Ollama {
      * @return Jackson object mapper.
      */
     public static ObjectMapper getMapper() {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
         JavaTimeModule module = new JavaTimeModule();
         module.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(formatter));
         module.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(formatter));
@@ -162,67 +180,30 @@ public class Ollama {
      * @return See Ollama API doc.
      * @throws Exception Of course.
      */
-    public static AvailableModels fetchAvailableModels(String endPoint) throws Exception {
-        URL url = new URL(endPoint);
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        con.setRequestMethod("GET");
+    public static TreeMap<String, AvailableModels> fetchAvailableModels() {
+        TreeMap<String, AvailableModels> ret = new TreeMap<>();
+        for (String endPoint : config.ollamas) {
+            try {
+                URL url = new URL(endPoint + TAGS);
+                HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                con.setRequestMethod("GET");
 
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), "utf-8"))) {
-            StringBuilder response = new StringBuilder();
-            String responseLine;
-            while ((responseLine = br.readLine()) != null) {
-                response.append(responseLine.trim());
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), "utf-8"))) {
+                    StringBuilder response = new StringBuilder();
+                    String responseLine;
+                    while ((responseLine = br.readLine()) != null) {
+                        response.append(responseLine.trim());
+                    }
+                    ret.put(endPoint, getMapper().readValue(response.toString(), AvailableModels.class));
+                } finally {
+                    con.disconnect();
+                }
+            } catch (Exception ex) {
+                Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, ex);
             }
-            return getMapper().readValue(response.toString(), AvailableModels.class);
-        } finally {
-            con.disconnect();
-        }
-    }
-
-    /**
-     * Fetch the known models.
-     *
-     * @return Set of model names with tags.
-     */
-    public static SortedSet<String> getAvailableModels() {
-        return getAvailableModels(API_TAGS);
-    }
-
-    /**
-     * Fetch the known models.
-     *
-     * @param endPoint End point for the Ollama service.
-     * @return Set of model names with tags.
-     */
-    public static SortedSet<String> getAvailableModels(String endPoint) {
-        TreeSet<String> ret = new TreeSet<>();
-        try {
-            AvailableModels availableModels;
-            availableModels = fetchAvailableModels(endPoint);
-            for (AvailableModels.AvailableModel am : availableModels.models) {
-                ret.add(am.name);
-            }
-        } catch (Exception ex) {
-            Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, ex);
         }
         return ret;
     }
-
-    /**
-     * Checks if the Ollama service is currently running.
-     *
-     * @return true if the service is running (models can be fetched), false
-     * otherwise.
-     */
-    private static boolean isServiceRunning(String endPoint) {
-        try {
-            AvailableModels availableModels = fetchAvailableModels(endPoint);
-            Logger.getLogger(Ollama.class.getName()).log(Level.INFO, "Ollama service is running: {0}", availableModels.toString());
-            return true;
-        } catch (Exception ex) {
-            Logger.getLogger(Ollama.class.getName()).log(Level.INFO, "Ollama service is not running: {0}", ex.getMessage());
-        }
-        return false;
-    }
+    public static final String TAGS = "/api/tags";
 
 }

@@ -29,3 +29,8 @@ You can even edit the SVG in place.
 That window needs some GUI work and it would be nice to be able to save things,
 that is being worked on.
 
+## Utilities
+Mostly in the idea phase right now:
+- Universal smart configuration. The idea here is to
+use a small local model to fetch, update and store typical
+configuration from and to any format file like INI, JSON, XML, or just text.
