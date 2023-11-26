@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.TreeMap;
 
@@ -17,6 +18,11 @@ public class OllamaClient {
     private String branch = "default";
 
     public OllamaClient(String endPoint) {
+        if (null == Ollama.config.lastEndpoint
+                || !Ollama.config.lastEndpoint.equalsIgnoreCase(endPoint)) {
+            Ollama.config.lastEndpoint = endPoint;
+            Ollama.config.update();
+        }
         API_GENERATE = endPoint + GENERATE;
     }
 
@@ -95,7 +101,6 @@ public class OllamaClient {
     }
 
     private String sendRequest(String requestBody) throws Exception {
-        // System.out.println(requestBody);
         URL url = new URL(API_GENERATE);
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("POST");
@@ -137,6 +142,24 @@ public class OllamaClient {
             StringBuilder fullResponse = new StringBuilder();
             while ((responseLine = br.readLine()) != null) {
                 if (!responseLine.trim().isEmpty()) {
+                    if (responseLine.startsWith("{\"error")) {
+                        Response err = new Response();
+                        err.context = new LinkedList<>();
+                        err.createdAt = LocalDateTime.now();
+                        err.done = true;
+                        err.evalCount = 0;
+                        err.evalDuration = 1;
+                        err.loadDuration = 1;
+                        err.model = "?";
+                        err.promptEvalCount = 0;
+                        err.promptEvalDuration = 1;
+                        err.sampleCount = 0;
+                        err.sampleDuration = 1;
+                        err.totalDuration = 3;
+                        err.response = responseLine;
+                        listener.onResponseReceived(err);
+                        return err;
+                    }
                     Response val = mapper.readValue(responseLine, Response.class);
                     if (val.done) {
                         val.response = fullResponse.toString();

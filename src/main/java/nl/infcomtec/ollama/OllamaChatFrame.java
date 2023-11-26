@@ -65,6 +65,7 @@ public class OllamaChatFrame {
     private JLabel inTokens;
     private final AtomicBoolean autoMode = new AtomicBoolean(false);
     private final ExecutorService pool = Executors.newCachedThreadPool();
+    private JLabel tokensSec;
 
     public OllamaChatFrame() {
         setupGUI(Ollama.config.fontSize);
@@ -194,6 +195,7 @@ public class OllamaChatFrame {
         createdAt = new JLabel();
         outTokens = new JLabel();
         inTokens = new JLabel();
+        tokensSec = new JLabel();
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         ret.setLayout(new GridBagLayout());
@@ -221,6 +223,12 @@ public class OllamaChatFrame {
         gbc.gridx = 1;
         gbc.gridy = 3;
         ret.add(outTokens, gbc);
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        ret.add(new JLabel("Tokens/sec"), gbc);
+        gbc.gridx = 1;
+        gbc.gridy = 4;
+        ret.add(tokensSec, gbc);
         ret.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(new Color(70, 206, 80), 5),
                 "Session"));
@@ -233,6 +241,7 @@ public class OllamaChatFrame {
         createdAt.setText(resp.createdAt.toString());
         outTokens.setText(Integer.toString(resp.evalCount));
         inTokens.setText(Integer.toString(resp.promptEvalCount));
+        tokensSec.setText(String.format("%.2f", 1e9 * resp.evalCount / resp.evalDuration));
     }
 
     private void finishInit() {

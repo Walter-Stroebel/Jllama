@@ -20,6 +20,7 @@ public class Config {
     public String[] ollamas;
     public Boolean streaming = false;
     public Boolean chatMode = true;
+    public String lastEndpoint;
 
     public void update(Rectangle bounds) {
         x = bounds.x;
