@@ -325,6 +325,7 @@ public class OllamaChatFrame {
                     protected void process(List<StreamedResponse> chunks) {
                         for (StreamedResponse sr : chunks) {
                             chat.append(sr.response);
+                            chat.setCaretPosition(chat.getDocument().getLength());
                         }
                         chunks.clear();
                     }
