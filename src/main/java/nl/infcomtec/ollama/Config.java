@@ -21,6 +21,7 @@ public class Config {
     public Boolean streaming = false;
     public Boolean chatMode = true;
     public String lastEndpoint;
+    public String lastModel;
 
     public void update(Rectangle bounds) {
         x = bounds.x;
@@ -38,4 +39,11 @@ public class Config {
         }
     }
 
+    public String getLastEndPoint() {
+        return null == lastEndpoint ? null : lastEndpoint;
+    }
+
+    public String getLastModel() {
+        return null == lastModel ? null : lastModel;
+    }
 }
