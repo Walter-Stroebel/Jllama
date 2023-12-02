@@ -40,6 +40,8 @@ import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
+import nl.infcomtec.simpleimage.ImageObject;
+import nl.infcomtec.simpleimage.ImageViewer;
 import nl.infcomtec.tools.PandocConverter;
 
 /**
@@ -84,7 +86,7 @@ public class OllamaChatFrame {
         hosts = new JComboBox<>();
         models = new JComboBox<>();
         String lsModel = Ollama.config.getLastModel();
-        String lsHost = Ollama.config.getLastEndPoint();
+        String lsHost = Ollama.config.getLastEndpoint();
         for (Map.Entry<String, AvailableModels> e : Ollama.fetchAvailableModels().entrySet()) {
             addToHosts(e.getKey());
             if (0 == models.getItemCount()) {
@@ -132,6 +134,20 @@ public class OllamaChatFrame {
                 html.getContentPane().add(new JScrollPane(pane), BorderLayout.CENTER);
                 html.pack();
                 html.setVisible(true);
+            }
+        });
+        buttons.add(new AbstractAction("Dall-E 3") {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                try {
+                    String text = chat.getSelectedText();
+                    DallEClient dale = new DallEClient();
+                    ImageObject io = new ImageObject(dale.getImage(text));
+                    ImageViewer iv = new ImageViewer(io);
+                    iv.getScalePanFrame();
+                } catch (Exception ex) {
+                    Logger.getLogger(OllamaChatFrame.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
         });
         buttons.add(new JToolBar.Separator());

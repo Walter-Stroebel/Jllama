@@ -42,7 +42,7 @@ public class Ollama {
     public static final String DEFAULT_QUESTION = "Hello, I am really excited to talk to you!"
             + " Please tell me about yourself?";
     public static final File configFile = new File(Ollama.WORK_DIR, "chatcfg.json");
-    public static Config config;
+    public static OllConfig config;
 
     public static void main(String[] args) {
         if (!WORK_DIR.exists()) {
@@ -50,17 +50,18 @@ public class Ollama {
         }
         try {
             if (configFile.exists()) {
-                config = getMapper().readValue(configFile, Config.class);
+                config = getMapper().readValue(configFile, OllConfig.class);
             }
             if (null == config.ollamas) {
                 config.ollamas = new String[]{LOCAL_ENDPOINT};
                 config.update();
             }
         } catch (Exception any) {
+            System.out.println(any.getMessage());
             config = null;
         }
         if (null == config) {
-            config = new Config();
+            config = new OllConfig();
             config.x = config.y = 0;
             config.w = 1000;
             config.h = 700;
@@ -68,8 +69,16 @@ public class Ollama {
             config.ollamas = new String[]{LOCAL_ENDPOINT};
             config.update();
         }
+        if (null == config.openAIKey || config.openAIKey.isEmpty()) {
+            System.out.println("No OpenAI key: Dall-E is disabled.");
+            System.out.println("Edit " + configFile.getAbsolutePath() + " to fix this.");
+        }
         if (fetchAvailableModels().isEmpty()) {
-            System.out.println("Nothing found. Suggestion: ollama run mistral");
+            System.out.println("Startup failed. Suggestions:"
+                    + "\n\tollama run mistral"
+                    + "\n\tollama serve"
+                    + "\n\tsudo systemctl start ollama");
+            System.out.println("Or edit " + configFile.getAbsolutePath() + " to fix this.");
             System.exit(2);
         }
         if (config.chatMode) {
@@ -195,6 +204,8 @@ public class Ollama {
                         response.append(responseLine.trim());
                     }
                     ret.put(endPoint, getMapper().readValue(response.toString(), AvailableModels.class));
+                } catch (Exception any) {
+                    System.out.println("Endpoint " + url + " is not responding.");
                 } finally {
                     con.disconnect();
                 }

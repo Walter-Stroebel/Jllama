@@ -10,7 +10,7 @@ import java.util.logging.Logger;
  *
  * @author Walter Stroebel
  */
-public class Config {
+public class OllConfig {
 
     public int x;
     public int y;
@@ -22,6 +22,7 @@ public class Config {
     public Boolean chatMode = true;
     public String lastEndpoint;
     public String lastModel;
+    public String openAIKey;
 
     public void update(Rectangle bounds) {
         x = bounds.x;
@@ -39,7 +40,7 @@ public class Config {
         }
     }
 
-    public String getLastEndPoint() {
+    public String getLastEndpoint() {
         return null == lastEndpoint ? null : lastEndpoint;
     }
 
