@@ -305,8 +305,12 @@ public class OllamaChatFrame {
         public void actionPerformed(ActionEvent ae) {
             final String question = input.getText().trim();
             input.setText("");
+            askModel("\n\n### Question\n\n", question);
+        }
+
+        private void askModel(final String source, final String question) {
             if (!question.isEmpty()) {
-                chat.append("\n\n### Question\n\n" + question);
+                chat.append(source + question);
                 SwingWorker<Response, StreamedResponse> sw = new SwingWorker<Response, StreamedResponse>() {
 
                     OllamaClient.StreamListener listener = new OllamaClient.StreamListener() {
@@ -333,6 +337,10 @@ public class OllamaChatFrame {
                                             new TextImage(pool, mod.getClass().getSimpleName(), mod);
                                         } else {
                                             System.out.println(mod.getText());
+                                            if (null == mod.getText()) {
+
+                                            }
+                                            askModel("\n\nTooling\n\n", mod.getText());
                                         }
                                     }
                                 }

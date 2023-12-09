@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -52,6 +53,7 @@ public class Vagrant extends ToolManager {
     }
 
     public void log(String... msg) {
+        System.out.println(Arrays.deepToString(msg));
         synchronized (log) {
             logTimeStamp();
             if (null == msg) {
