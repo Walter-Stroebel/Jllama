@@ -47,7 +47,7 @@ import nl.infcomtec.tools.PandocConverter;
 /**
  * This is a FULL Ollama chat window. It allow to chat with any model available
  * at will.<p>
- * Note that this displays a LOT of extra information along with the actual chat
+ * Note that this displays a lot of extra information along with the actual chat
  * which allows one to get a good insight in how the model performs.</p>
  *
  * @author Walter Stroebel
@@ -55,12 +55,12 @@ import nl.infcomtec.tools.PandocConverter;
 public class OllamaChatFrame {
 
     private final JFrame frame;
-    private final JToolBar buttons;
-    private final JTextArea chat;
-    private final JTextArea input;
+    private final JToolBar buttons = new JToolBar();
+    private final JTextArea chat = new JTextArea();
+    private final JTextArea input = new JTextArea(4, 80);
     private OllamaClient client;
-    private final JComboBox<String> hosts;
-    private final JComboBox<String> models;
+    private final JComboBox<String> hosts = new JComboBox<>();
+    private final JComboBox<String> models = new JComboBox<>();
     private JLabel curCtxSize;
     private JLabel createdAt;
     private JLabel outTokens;
@@ -69,13 +69,54 @@ public class OllamaChatFrame {
     private final ExecutorService pool = Executors.newCachedThreadPool();
     private JLabel tokensSec;
 
+    /**
+     * Ties all the bits and pieces together into a GUI.
+     */
     public OllamaChatFrame() {
         setupGUI(Ollama.config.fontSize);
         frame = new JFrame("Ollama chat");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         Container cont = frame.getContentPane();
         cont.setLayout(new BorderLayout());
-        buttons = new JToolBar();
+        buttonBar();
+        cont.add(buttons, BorderLayout.NORTH);
+        chat.setLineWrap(true);
+        chat.setWrapStyleWord(true);
+        JScrollPane pane = new JScrollPane(chat);
+        pane.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(new Color(0, 0, 128), 5),
+                "Chat"));
+        cont.add(pane, BorderLayout.CENTER);
+        Box bottom = Box.createHorizontalBox();
+        input.setLineWrap(true);
+        input.setWrapStyleWord(true);
+        bottom.add(new JScrollPane(input));
+        bottom.add(Box.createHorizontalStrut(10));
+        bottom.add(new JButton(new Interact()));
+        bottom.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(new Color(135, 206, 250), 5),
+                "Input"));
+        cont.add(bottom, BorderLayout.SOUTH);
+        cont.add(sideBar(), BorderLayout.EAST);
+        frame.pack();
+        if (EventQueue.isDispatchThread()) {
+            finishInit();
+        } else {
+            try {
+                EventQueue.invokeAndWait(new Runnable() {
+                    @Override
+                    public void run() {
+                        finishInit();
+                    }
+                });
+            } catch (Exception ex) {
+                Logger.getLogger(OllamaChatFrame.class.getName()).log(Level.SEVERE, null, ex);
+                System.exit(1);
+            }
+        }
+    }
+
+    private void buttonBar() {
         buttons.add(new AbstractAction("Exit") {
             @Override
             public void actionPerformed(ActionEvent ae) {
@@ -83,8 +124,6 @@ public class OllamaChatFrame {
             }
         });
         buttons.add(new JToolBar.Separator());
-        hosts = new JComboBox<>();
-        models = new JComboBox<>();
         String lsModel = Ollama.config.getLastModel();
         String lsHost = Ollama.config.getLastEndpoint();
         for (Map.Entry<String, AvailableModels> e : Ollama.fetchAvailableModels().entrySet()) {
@@ -157,45 +196,6 @@ public class OllamaChatFrame {
                 autoMode.set(((JCheckBox) ae.getSource()).isSelected());
             }
         }));
-        cont.add(buttons, BorderLayout.NORTH);
-        chat = new JTextArea();
-        chat.setLineWrap(true);
-        chat.setWrapStyleWord(true);
-        JScrollPane pane = new JScrollPane(chat);
-        pane.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(new Color(0, 0, 128), 5),
-                "Chat"));
-        cont.add(pane, BorderLayout.CENTER);
-        Box bottom = Box.createHorizontalBox();
-
-        input = new JTextArea(4, 80);
-        input.setLineWrap(true);
-        input.setWrapStyleWord(true);
-        bottom.add(new JScrollPane(input));
-        bottom.add(Box.createHorizontalStrut(10));
-        bottom.add(new JButton(new Interact()));
-
-        bottom.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(new Color(135, 206, 250), 5),
-                "Input"));
-        cont.add(bottom, BorderLayout.SOUTH);
-        cont.add(sideBar(), BorderLayout.EAST);
-        frame.pack();
-        if (EventQueue.isDispatchThread()) {
-            finishInit();
-        } else {
-            try {
-                EventQueue.invokeAndWait(new Runnable() {
-                    @Override
-                    public void run() {
-                        finishInit();
-                    }
-                });
-            } catch (Exception ex) {
-                Logger.getLogger(OllamaChatFrame.class.getName()).log(Level.SEVERE, null, ex);
-                System.exit(1);
-            }
-        }
     }
 
     private void addToHosts(String host) {
@@ -337,10 +337,9 @@ public class OllamaChatFrame {
                                             new TextImage(pool, mod.getClass().getSimpleName(), mod);
                                         } else {
                                             System.out.println(mod.getText());
-                                            if (null == mod.getText()) {
-
+                                            if (null != mod.getText()) {
+                                                askModel("\n\n### Tooling\n\n", mod.getText());
                                             }
-                                            askModel("\n\nTooling\n\n", mod.getText());
                                         }
                                     }
                                 }
