@@ -26,6 +26,14 @@ public class Debate {
         return Ollama.getMapper().readValue(json, Debate.class);
     }
 
+    /**
+     * Set up a debate using the same model for all participants.
+     *
+     * @param question The question/subject to debate.
+     * @param _rounds number of rounds, between 1 and 3, depends on num_ctx how
+     * far you can take this.
+     * @return instantiated Debate, ready to run debate() on.
+     */
     public static Debate mono(String question, int _rounds) {
         int rounds = Math.min(_rounds, 3);
         rounds = Math.max(rounds, 1);
@@ -49,6 +57,12 @@ public class Debate {
         Ollama.getMapper().writeValue(json, this);
     }
 
+    /**
+     * Create and fill in an instance of this object and call this to run the
+     * full debate.
+     *
+     * @throws Exception
+     */
     public void debate() throws Exception {
         int rnd = protagonistPoints.length;
         OllamaClient pro = new OllamaClient(protagonistEndpoint);
