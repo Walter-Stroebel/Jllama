@@ -42,7 +42,7 @@ public class Ollama {
     public static final String DEFAULT_QUESTION = "Hello, I am really excited to talk to you!"
             + " Please tell me about yourself?";
     public static final File configFile = new File(Ollama.WORK_DIR, "chatcfg.json");
-    public static OllConfig config;
+    public static OllamaConfig config;
 
     public static void main(String[] args) {
         if (!WORK_DIR.exists()) {
@@ -50,7 +50,7 @@ public class Ollama {
         }
         try {
             if (configFile.exists()) {
-                config = getMapper().readValue(configFile, OllConfig.class);
+                config = getMapper().readValue(configFile, OllamaConfig.class);
             }
             if (null == config.ollamas) {
                 config.ollamas = new String[]{LOCAL_ENDPOINT};
@@ -61,7 +61,7 @@ public class Ollama {
             config = null;
         }
         if (null == config) {
-            config = new OllConfig();
+            config = new OllamaConfig();
             config.x = config.y = 0;
             config.w = 1000;
             config.h = 700;

@@ -10,7 +10,7 @@ import java.util.logging.Logger;
  *
  * @author Walter Stroebel
  */
-public class OllConfig {
+public class OllamaConfig {
 
     public int x;
     public int y;
