@@ -45,6 +45,35 @@ public class Ollama {
     public static OllamaConfig config;
 
     public static void main(String[] args) {
+        init();
+        if (config.chatMode) {
+            new OllamaChatFrame();
+        } else {
+            try {
+                Map.Entry<String, AvailableModels> first = fetchAvailableModels().firstEntry();
+                String model = first.getValue().models[0].name;
+                System.out.println("Using model " + model);
+                OllamaClient client = new OllamaClient(first.getKey());
+                if (!config.streaming) {
+                    Response answer = client.askAndAnswer(model, DEFAULT_QUESTION);
+                    System.out.println(answer);
+                } else {
+                    Response answer = client.askWithStream(model, DEFAULT_QUESTION, new OllamaClient.StreamListener() {
+                        @Override
+                        public boolean onResponseReceived(StreamedResponse responsePart) {
+                            System.out.println(responsePart.response);
+                            return true;
+                        }
+                    });
+                    System.out.println(answer);
+                }
+            } catch (Exception ex) {
+                Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    public static void init() {
         if (!WORK_DIR.exists()) {
             WORK_DIR.mkdirs();
         }
@@ -80,31 +109,6 @@ public class Ollama {
                     + "\n\tsudo systemctl start ollama");
             System.out.println("Or edit " + configFile.getAbsolutePath() + " to fix this.");
             System.exit(2);
-        }
-        if (config.chatMode) {
-            new OllamaChatFrame();
-        } else {
-            try {
-                Map.Entry<String, AvailableModels> first = fetchAvailableModels().firstEntry();
-                String model = first.getValue().models[0].name;
-                System.out.println("Using model " + model);
-                OllamaClient client = new OllamaClient(first.getKey());
-                if (!config.streaming) {
-                    Response answer = client.askAndAnswer(model, DEFAULT_QUESTION);
-                    System.out.println(answer);
-                } else {
-                    Response answer = client.askWithStream(model, DEFAULT_QUESTION, new OllamaClient.StreamListener() {
-                        @Override
-                        public boolean onResponseReceived(StreamedResponse responsePart) {
-                            System.out.println(responsePart.response);
-                            return true;
-                        }
-                    });
-                    System.out.println(answer);
-                }
-            } catch (Exception ex) {
-                Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, ex);
-            }
         }
     }
 

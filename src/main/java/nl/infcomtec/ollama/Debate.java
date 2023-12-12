@@ -50,7 +50,25 @@ public class Debate {
         ret.protagonistEndpoint = ep;
         ret.protagonistModel = md;
         ret.protagonistPoints = new String[rounds];
+        ret.question = question;
         return ret;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Debate:\n");
+        sb.append("protagonistModel=").append(protagonistModel);
+        sb.append("\nopponentModel=").append(opponentModel);
+        sb.append("\njudgeModel=").append(judgeModel);
+        sb.append("\nquestion=").append(question);
+        for (int i = 0; i < protagonistPoints.length; i++) {
+            sb.append("\nPro round ").append(i + 1).append(": ").append(protagonistPoints[i]);
+            sb.append("\nCon round ").append(i + 1).append(": ").append(opponentPoints[i]);
+        }
+        sb.append("\nconclusion=").append(conclusion);
+        sb.append('\n');
+        return sb.toString();
     }
 
     public void toFile(File json) throws IOException {
