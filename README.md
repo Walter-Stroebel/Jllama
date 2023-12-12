@@ -38,5 +38,5 @@ that is being worked on.
 
 _2023-11-24_: Most things are working now, as mentioned on this page. Still work left though.
 
-_2023-12-11_: Debate! Have two models hash it out against each other (or themselves) and have a model judge the result. Untested but implemented.
+_2023-12-11_: Debate! Have two models hash it out against each other (or themselves) and have a model judge the result. Tested with quite amazing results, IMHO:
 [Sample run in DebateDemo.java](debateDemo.md)
