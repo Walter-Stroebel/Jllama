@@ -1,5 +1,6 @@
 # Running DebateDemo.java on my machine.
 ## Runtime: 20 seconds. Model Mistral 7B with 8k for num_ctx.
+## Hardware: RTX 3070
 
 Debate:
 protagonistModel=big:latest
