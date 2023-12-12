@@ -2,6 +2,18 @@
 ## Runtime: 20 seconds. Model Mistral 7B with 8k for num_ctx.
 ## Hardware: RTX 3070
 
+```shell
+# in the directory you cloned this project
+# and assuming you ran the chat interface at some time:
+# (the demo needs ~/.ollama.data/chatcfg.json to be valid)
+mvn install
+# running chat
+java -jar ~/.m2/repository/nl/infcomtec/Ollama/1.0/Ollama-1.0-jar-with-dependencies.jar
+# running the debate demo
+java -cp ~/.m2/repository/nl/infcomtec/Ollama/1.0/Ollama-1.0-jar-with-dependencies.jar nl.infcomtec.ollama.DebateDemo
+```
+
+
 ### Debate:
 
 ### protagonistModel=big:latest
