@@ -64,13 +64,13 @@ public class Debate {
      * @throws Exception
      */
     public void debate() throws Exception {
-        int rnd = protagonistPoints.length;
+        int rounds = protagonistPoints.length;
         OllamaClient pro = new OllamaClient(protagonistEndpoint);
         OllamaClient con = new OllamaClient(opponentEndpoint);
         OllamaClient jud = new OllamaClient(judgeEndpoint);
         StringBuilder proQ = new StringBuilder("You are participating in a debate.\n");
-        proQ.append("The debate will be over ").append(rnd).append(" round");
-        if (1 != rnd) {
+        proQ.append("The debate will be over ").append(rounds).append(" round");
+        if (1 != rounds) {
             proQ.append("s");
         }
         proQ.append(".\n");
@@ -87,7 +87,7 @@ public class Debate {
         opponentPoints[0] = con.askAndAnswer(opponentModel, conQ.toString()).response;
 
         // Conducting remaining rounds
-        for (int i = 1; i < rnd; i++) {
+        for (int i = 1; i < rounds; i++) {
             StringBuilder proRoundQ = new StringBuilder("Round " + (i + 1) + " of the debate.\n");
             proRoundQ.append("The opponent's previous point was:\n");
             proRoundQ.append(opponentPoints[i - 1]);
@@ -104,14 +104,13 @@ public class Debate {
         }
 
         // Conclusion by the judge
-        StringBuilder judgeQ = new StringBuilder("The debate is over. Here are the points:\n");
-        judgeQ.append("Protagonist points:\n");
-        for (String point : protagonistPoints) {
-            judgeQ.append(point).append("\n");
-        }
-        judgeQ.append("\nOpponent points:\n");
-        for (String point : opponentPoints) {
-            judgeQ.append(point).append("\n");
+        StringBuilder judgeQ = new StringBuilder("You are the arbitor in a debate.\n");
+        judgeQ.append("The debate is over. Here are the points:\n");
+        for (int i = 0; i < rounds; i++) {
+            judgeQ.append("Protagonist points in round ").append(i + 1).append(":\n");
+            judgeQ.append(protagonistPoints[i]).append("\n");
+            judgeQ.append("\nOpponent points in round ").append(i + 1).append(":\n");
+            judgeQ.append(opponentPoints[i]).append("\n");
         }
         judgeQ.append("\nPlease provide your judgment.\n");
 
