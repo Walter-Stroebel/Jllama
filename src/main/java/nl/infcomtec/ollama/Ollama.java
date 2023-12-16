@@ -16,7 +16,6 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
@@ -39,38 +38,12 @@ public class Ollama {
             .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
             .appendPattern("XXX")
             .toFormatter();
-    public static final String DEFAULT_QUESTION = "Hello, I am really excited to talk to you!"
-            + " Please tell me about yourself?";
     public static final File configFile = new File(Ollama.WORK_DIR, "chatcfg.json");
     public static OllamaConfig config;
 
     public static void main(String[] args) {
         init();
-        if (config.chatMode) {
-            new OllamaChatFrame();
-        } else {
-            try {
-                Map.Entry<String, AvailableModels> first = fetchAvailableModels().firstEntry();
-                String model = first.getValue().models[0].name;
-                System.out.println("Using model " + model);
-                OllamaClient client = new OllamaClient(first.getKey());
-                if (!config.streaming) {
-                    Response answer = client.askAndAnswer(model, DEFAULT_QUESTION);
-                    System.out.println(answer);
-                } else {
-                    Response answer = client.askWithStream(model, DEFAULT_QUESTION, new OllamaClient.StreamListener() {
-                        @Override
-                        public boolean onResponseReceived(StreamedResponse responsePart) {
-                            System.out.println(responsePart.response);
-                            return true;
-                        }
-                    });
-                    System.out.println(answer);
-                }
-            } catch (Exception ex) {
-                Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
+        new OllamaChatFrame();
     }
 
     public static void init() {

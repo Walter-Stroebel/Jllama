@@ -6,9 +6,7 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
@@ -51,6 +49,22 @@ import javax.swing.UIManager;
  */
 public class OllamaCoder {
 
+    /**
+     * Quick &amp; Dirty fix for large monitors.
+     *
+     * @param fontSize in font points
+     */
+    public static void setupGUI(float fontSize) {
+        Font defaultFont = UIManager.getFont("Label.font");
+        Font useFont = defaultFont.deriveFont(fontSize);
+        Set<Map.Entry<Object, Object>> entries = new HashSet<>(UIManager.getLookAndFeelDefaults().entrySet());
+        for (Map.Entry<Object, Object> entry : entries) {
+            if (entry.getKey().toString().endsWith(".font")) {
+                UIManager.put(entry.getKey(), useFont);
+            }
+        }
+    }
+
     private final JFrame frame;
     private final JToolBar buttons = new JToolBar();
     private final JTextArea chat = new JTextArea();
@@ -58,12 +72,8 @@ public class OllamaCoder {
     private OllamaClient client;
     private final JComboBox<String> hosts = new JComboBox<>();
     private final JComboBox<String> models = new JComboBox<>();
-    private JLabel curCtxSize;
-    private JLabel createdAt;
-    private JLabel outTokens;
-    private JLabel inTokens;
     private final ExecutorService pool = Executors.newCachedThreadPool();
-    private JLabel tokensSec;
+    private JPanel codePanel;
 
     /**
      * Ties all the bits and pieces together into a GUI.
@@ -197,58 +207,12 @@ public class OllamaCoder {
     }
 
     private JPanel sideBar() {
-        JPanel ret = new JPanel();
-        curCtxSize = new JLabel();
-        createdAt = new JLabel();
-        outTokens = new JLabel();
-        inTokens = new JLabel();
-        tokensSec = new JLabel();
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
-        ret.setLayout(new GridBagLayout());
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        ret.add(new JLabel("Context"), gbc);
-        gbc.gridx = 1;
-        gbc.gridy = 0;
-        ret.add(curCtxSize, gbc);
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        ret.add(new JLabel("Created at"), gbc);
-        gbc.gridx = 1;
-        gbc.gridy = 1;
-        ret.add(createdAt, gbc);
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        ret.add(new JLabel("In tokens"), gbc);
-        gbc.gridx = 1;
-        gbc.gridy = 2;
-        ret.add(inTokens, gbc);
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        ret.add(new JLabel("Out tokens"), gbc);
-        gbc.gridx = 1;
-        gbc.gridy = 3;
-        ret.add(outTokens, gbc);
-        gbc.gridx = 0;
-        gbc.gridy = 4;
-        ret.add(new JLabel("Tokens/sec"), gbc);
-        gbc.gridx = 1;
-        gbc.gridy = 4;
-        ret.add(tokensSec, gbc);
-        ret.setBorder(BorderFactory.createTitledBorder(
+        codePanel = new JPanel();
+        codePanel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(new Color(70, 206, 80), 5),
-                "Session"));
-        ret.setPreferredSize(new Dimension(Ollama.config.w / 4, Ollama.config.h));
-        return ret;
-    }
-
-    private void updateSideBar(Response resp) {
-        curCtxSize.setText(Integer.toString(resp.context.size()));
-        createdAt.setText(resp.createdAt.toString());
-        outTokens.setText(Integer.toString(resp.evalCount));
-        inTokens.setText(Integer.toString(resp.promptEvalCount));
-        tokensSec.setText(String.format("%.2f", 1e9 * resp.evalCount / resp.evalDuration));
+                "Code window"));
+        codePanel.setPreferredSize(new Dimension(Ollama.config.w / 2 - 20, Ollama.config.h));
+        return codePanel;
     }
 
     private void finishInit() {
@@ -262,25 +226,11 @@ public class OllamaCoder {
 
             @Override
             public void componentResized(ComponentEvent e) {
-                Ollama.config.update(frame.getBounds());
+                Rectangle bounds = frame.getBounds();
+                Ollama.config.update(bounds);
+                codePanel.setPreferredSize(new Dimension(Ollama.config.w / 2 - 20, Ollama.config.h));
             }
         });
-    }
-
-    /**
-     * Quick &amp; Dirty fix for large monitors.
-     *
-     * @param fontSize in font points
-     */
-    public static void setupGUI(float fontSize) {
-        Font defaultFont = UIManager.getFont("Label.font");
-        Font useFont = defaultFont.deriveFont(fontSize);
-        Set<Map.Entry<Object, Object>> entries = new HashSet<>(UIManager.getLookAndFeelDefaults().entrySet());
-        for (Map.Entry<Object, Object> entry : entries) {
-            if (entry.getKey().toString().endsWith(".font")) {
-                UIManager.put(entry.getKey(), useFont);
-            }
-        }
     }
 
     class Interact extends AbstractAction {
@@ -316,7 +266,6 @@ public class OllamaCoder {
                     protected void done() {
                         try {
                             Response resp = get();
-                            updateSideBar(resp);
                         } catch (Exception ex) {
                             Logger.getLogger(OllamaCoder.class.getName()).log(Level.SEVERE, null, ex);
                         }
