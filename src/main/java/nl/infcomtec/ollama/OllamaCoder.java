@@ -25,16 +25,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
@@ -45,21 +42,14 @@ import javax.swing.JTextArea;
 import javax.swing.JToolBar;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
-import javax.swing.text.html.HTMLEditorKit;
-import javax.swing.text.html.StyleSheet;
-import nl.infcomtec.simpleimage.ImageObject;
-import nl.infcomtec.simpleimage.ImageViewer;
-import nl.infcomtec.tools.PandocConverter;
 
 /**
- * This is a FULL Ollama chat window. It allow to chat with any model available
- * at will.<p>
- * Note that this displays a lot of extra information along with the actual chat
- * which allows one to get a good insight in how the model performs.</p>
+ * This is a the Ollama coder window. It is meant to help with or learn coding,
+ * with any model available.
  *
  * @author Walter Stroebel
  */
-public class OllamaChatFrame {
+public class OllamaCoder {
 
     private final JFrame frame;
     private final JToolBar buttons = new JToolBar();
@@ -72,16 +62,15 @@ public class OllamaChatFrame {
     private JLabel createdAt;
     private JLabel outTokens;
     private JLabel inTokens;
-    private final AtomicBoolean autoMode = new AtomicBoolean(false);
     private final ExecutorService pool = Executors.newCachedThreadPool();
     private JLabel tokensSec;
 
     /**
      * Ties all the bits and pieces together into a GUI.
      */
-    public OllamaChatFrame() {
+    public OllamaCoder() {
         setupGUI(Ollama.config.fontSize);
-        frame = new JFrame("Ollama chat");
+        frame = new JFrame("Ollama Coder");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         Container cont = frame.getContentPane();
         cont.setLayout(new BorderLayout());
@@ -120,7 +109,7 @@ public class OllamaChatFrame {
         JScrollPane pane = new JScrollPane(chat);
         pane.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(new Color(0, 0, 128), 5),
-                "Chat"));
+                "Assistant"));
         cont.add(pane, BorderLayout.CENTER);
         Box bottom = Box.createHorizontalBox();
         input.setLineWrap(true);
@@ -145,7 +134,7 @@ public class OllamaChatFrame {
                     }
                 });
             } catch (Exception ex) {
-                Logger.getLogger(OllamaChatFrame.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(OllamaCoder.class.getName()).log(Level.SEVERE, null, ex);
                 System.exit(1);
             }
         }
@@ -158,11 +147,11 @@ public class OllamaChatFrame {
                 System.exit(0);
             }
         });
-        buttons.add(new AbstractAction("Code") {
+        buttons.add(new AbstractAction("Chat") {
             @Override
             public void actionPerformed(ActionEvent ae) {
                 frame.dispose();
-                new OllamaCoder();
+                new OllamaChatFrame();
             }
         });
         buttons.add(new JToolBar.Separator());
@@ -193,51 +182,6 @@ public class OllamaChatFrame {
         buttons.add(new JLabel("Models:"));
         buttons.add(models);
         buttons.add(new JToolBar.Separator());
-        buttons.add(new AbstractAction("HTML") {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
-                String markDown = chat.getText();
-                JFrame html = new JFrame("HTML");
-                html.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                html.getContentPane().setLayout(new BorderLayout());
-                JEditorPane pane = new JEditorPane();
-                pane.setContentType("text/html");
-                HTMLEditorKit kit = new HTMLEditorKit() {
-                    @Override
-                    public StyleSheet getStyleSheet() {
-                        StyleSheet styleSheet = super.getStyleSheet();
-                        styleSheet.addRule("body { font-family: 'Arial'; font-size: " + Math.round(Ollama.config.fontSize) + "pt; }");
-                        return styleSheet;
-                    }
-                };
-                pane.setEditorKit(kit);
-                pane.setText(new PandocConverter().convertMarkdownToHTML(markDown));
-                html.getContentPane().add(new JScrollPane(pane), BorderLayout.CENTER);
-                html.pack();
-                html.setVisible(true);
-            }
-        });
-        buttons.add(new AbstractAction("Dall-E 3") {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
-                try {
-                    String text = chat.getSelectedText();
-                    DallEClient dale = new DallEClient();
-                    ImageObject io = new ImageObject(dale.getImage(text));
-                    ImageViewer iv = new ImageViewer(io);
-                    iv.getScalePanFrame();
-                } catch (Exception ex) {
-                    Logger.getLogger(OllamaChatFrame.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-        });
-        buttons.add(new JToolBar.Separator());
-        buttons.add(new JCheckBox(new AbstractAction("Auto") {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
-                autoMode.set(((JCheckBox) ae.getSource()).isSelected());
-            }
-        }));
     }
 
     private void addToHosts(String host) {
@@ -373,23 +317,8 @@ public class OllamaChatFrame {
                         try {
                             Response resp = get();
                             updateSideBar(resp);
-                            if (autoMode.get()) {
-                                List<Modality> mods = Ollama.handleOutput(pool, resp.response);
-                                if (!mods.isEmpty()) {
-                                    for (Modality mod : mods) {
-                                        if (mod.isGraphical) {
-                                            new TextImage(pool, mod.getClass().getSimpleName(), mod);
-                                        } else {
-                                            System.out.println(mod.getText());
-                                            if (null != mod.getText()) {
-                                                askModel("\n\n### Tooling\n\n", mod.getText());
-                                            }
-                                        }
-                                    }
-                                }
-                            }
                         } catch (Exception ex) {
-                            Logger.getLogger(OllamaChatFrame.class.getName()).log(Level.SEVERE, null, ex);
+                            Logger.getLogger(OllamaCoder.class.getName()).log(Level.SEVERE, null, ex);
                         }
                     }
 
