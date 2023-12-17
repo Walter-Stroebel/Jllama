@@ -40,6 +40,9 @@ public class Ollama {
             .toFormatter();
     public static final File configFile = new File(Ollama.WORK_DIR, "chatcfg.json");
     public static OllamaConfig config;
+    private static TreeMap<String, AvailableModels> models;
+    public static Vagrant vagrant;
+    public static final String TAGS = "/api/tags";
 
     public static void main(String[] args) {
         init();
@@ -134,7 +137,6 @@ public class Ollama {
         }
         return ret;
     }
-    public static Vagrant vagrant;
 
     private static void handleRest(ExecutorService pool, LinkedList<Modality> ret, String currentText, int[] se) {
         StringBuilder cat = new StringBuilder(currentText);
@@ -160,11 +162,21 @@ public class Ollama {
     }
 
     /**
+     * Get the (cached) known models.
+     *
+     * @return See Ollama API doc.
+     */
+    public static TreeMap<String, AvailableModels> getAvailableModels() {
+        if (null == models) {
+            models = fetchAvailableModels();
+        }
+        return models;
+    }
+
+    /**
      * Fetch the known models.
      *
-     * @param endPoint End point for the Ollama service.
      * @return See Ollama API doc.
-     * @throws Exception Of course.
      */
     public static TreeMap<String, AvailableModels> fetchAvailableModels() {
         TreeMap<String, AvailableModels> ret = new TreeMap<>();
@@ -191,8 +203,7 @@ public class Ollama {
                 Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-        return ret;
+        return models = ret;
     }
-    public static final String TAGS = "/api/tags";
 
 }

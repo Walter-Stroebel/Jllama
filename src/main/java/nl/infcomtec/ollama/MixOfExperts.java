@@ -72,7 +72,7 @@ public class MixOfExperts {
      */
     public static MixOfExperts mono(String question, String[] expertPrompts) {
         int exp = expertPrompts.length;
-        TreeMap<String, AvailableModels> models = Ollama.fetchAvailableModels();
+        TreeMap<String, AvailableModels> models = Ollama.getAvailableModels();
         String ep = models.firstEntry().getKey();
         String md = models.firstEntry().getValue().models[0].name;
         MixOfExperts ret = new MixOfExperts();

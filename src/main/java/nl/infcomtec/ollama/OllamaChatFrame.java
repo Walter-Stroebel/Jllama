@@ -54,7 +54,7 @@ import nl.infcomtec.tools.PandocConverter;
 /**
  * This is a FULL Ollama chat window. It allow to chat with any model available
  * at will.<p>
- * Note that this displays a lot of extra information along with the actual chat
+ * Note that this displays some extra information along with the actual chat
  * which allows one to get a good insight in how the model performs.</p>
  *
  * @author Walter Stroebel
@@ -165,24 +165,24 @@ public class OllamaChatFrame {
             }
         });
         buttons.add(new JToolBar.Separator());
-        String lsModel = Ollama.config.getLastModel();
         String lsHost = Ollama.config.getLastEndpoint();
-        for (Map.Entry<String, AvailableModels> e : Ollama.fetchAvailableModels().entrySet()) {
-            addToHosts(e.getKey());
-            if (0 == models.getItemCount()) {
-                for (AvailableModels.AvailableModel am : e.getValue().models) {
-                    models.addItem(am.name);
-                    if (null == lsHost) {
-                        lsHost = e.getKey();
-                    }
-                    if (null == lsModel) {
-                        lsModel = am.name;
-                    }
+        for (String e : Ollama.getAvailableModels().keySet()) {
+            addToHosts(e);
+        }
+        client = new OllamaClient(lsHost);
+        models.removeAllItems();
+        for (AvailableModels.AvailableModel am : Ollama.getAvailableModels().get(lsHost).models) {
+            models.addItem(am.name);
+        }
+        if (null != Ollama.config.lastModel) {
+            for (int i = 0; i < models.getComponentCount(); i++) {
+                if (Ollama.config.lastModel.equals(models.getItemAt(i))) {
+                    models.setSelectedIndex(i);
+                    break;
                 }
             }
         }
-        client = new OllamaClient(lsHost);
-        models.setSelectedItem(lsModel);
+        models.invalidate();
         hosts.setSelectedItem(lsHost);
         hosts.addActionListener(new AddSelectHost());
         hosts.setEditable(true);
@@ -440,6 +440,7 @@ public class OllamaChatFrame {
                         models.setSelectedItem(fmod);
                     }
                 }
+                models.invalidate();
                 client = new OllamaClient(selHost);
             }
         }

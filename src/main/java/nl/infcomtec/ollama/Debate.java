@@ -37,7 +37,7 @@ public class Debate {
     public static Debate mono(String question, int _rounds) {
         int rounds = Math.min(_rounds, 3);
         rounds = Math.max(rounds, 1);
-        TreeMap<String, AvailableModels> models = Ollama.fetchAvailableModels();
+        TreeMap<String, AvailableModels> models = Ollama.getAvailableModels();
         String ep = models.firstEntry().getKey();
         String md = models.firstEntry().getValue().models[0].name;
         Debate ret = new Debate();

@@ -172,7 +172,7 @@ public class OllamaCoder {
         buttons.add(new JToolBar.Separator());
         String lsModel = Ollama.config.getLastModel();
         String lsHost = Ollama.config.getLastEndpoint();
-        for (Map.Entry<String, AvailableModels> e : Ollama.fetchAvailableModels().entrySet()) {
+        for (Map.Entry<String, AvailableModels> e : Ollama.getAvailableModels().entrySet()) {
             addToHosts(e.getKey());
             if (0 == models.getItemCount()) {
                 for (AvailableModels.AvailableModel am : e.getValue().models) {
@@ -318,7 +318,7 @@ public class OllamaCoder {
                 hosts.setSelectedItem(selHost);
                 Ollama.config.update();
                 String fmod = null;
-                for (Map.Entry<String, AvailableModels> e : Ollama.fetchAvailableModels().entrySet()) {
+                for (Map.Entry<String, AvailableModels> e : Ollama.getAvailableModels().entrySet()) {
                     addToHosts(e.getKey());
                     if (e.getKey().equals(selHost)) {
                         models.removeAllItems();
