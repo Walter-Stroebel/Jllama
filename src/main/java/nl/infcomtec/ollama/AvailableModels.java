@@ -10,6 +10,17 @@ import java.time.LocalDateTime;
  */
 public class AvailableModels {
 
+    public static class Details {
+
+        public String format;
+        public String family;
+        public String[] families;
+        @JsonProperty(value = "parameter_size")
+        public String parameterSize;
+        @JsonProperty(value = "quantization_level")
+        public String quantizationLevel;
+    }
+
     public static class AvailableModel {
 
         public String name;
@@ -17,6 +28,7 @@ public class AvailableModels {
         public LocalDateTime modifiedAt;
         public long size;
         public String digest;
+        public Details details;
     }
     public AvailableModel[] models;
 

@@ -33,7 +33,6 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
-import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -54,7 +53,7 @@ public class OllamaCoder {
      *
      * @param fontSize in font points
      */
-    public static void setupGUI(float fontSize) {
+    public final void setupGUI(float fontSize) {
         Font defaultFont = UIManager.getFont("Label.font");
         Font useFont = defaultFont.deriveFont(fontSize);
         Set<Map.Entry<Object, Object>> entries = new HashSet<>(UIManager.getLookAndFeelDefaults().entrySet());
@@ -63,17 +62,21 @@ public class OllamaCoder {
                 UIManager.put(entry.getKey(), useFont);
             }
         }
+        chat.setFont(useFont);
+        input.setFont(useFont);
+        code.setFont(useFont);
     }
 
     private final JFrame frame;
     private final JToolBar buttons = new JToolBar();
     private final JTextArea chat = new JTextArea();
+    private final JTextArea code = new JTextArea();
     private final JTextArea input = new JTextArea(4, 80);
     private OllamaClient client;
     private final JComboBox<String> hosts = new JComboBox<>();
     private final JComboBox<String> models = new JComboBox<>();
     private final ExecutorService pool = Executors.newCachedThreadPool();
-    private JPanel codePanel;
+    private JScrollPane codePanel;
 
     /**
      * Ties all the bits and pieces together into a GUI.
@@ -87,7 +90,9 @@ public class OllamaCoder {
         buttonBar();
         cont.add(buttons, BorderLayout.NORTH);
         chat.setLineWrap(true);
+        code.setLineWrap(true);
         chat.setWrapStyleWord(true);
+        code.setWrapStyleWord(true);
         final JPopupMenu popupMenu = new JPopupMenu();
         JMenuItem copy = new JMenuItem("Copy");
         copy.addActionListener(new AbstractAction("Copy") {
@@ -206,12 +211,13 @@ public class OllamaCoder {
         }
     }
 
-    private JPanel sideBar() {
-        codePanel = new JPanel();
+    private JScrollPane sideBar() {
+        codePanel = new JScrollPane();
         codePanel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(new Color(70, 206, 80), 5),
                 "Code window"));
         codePanel.setPreferredSize(new Dimension(Ollama.config.w / 2 - 20, Ollama.config.h));
+        codePanel.setViewportView(code);
         return codePanel;
     }
 

@@ -69,7 +69,6 @@ public class OllamaChatFrame {
     private final JComboBox<String> hosts = new JComboBox<>();
     private final JComboBox<String> models = new JComboBox<>();
     private JLabel curCtxSize;
-    private JLabel createdAt;
     private JLabel outTokens;
     private JLabel inTokens;
     private final AtomicBoolean autoMode = new AtomicBoolean(false);
@@ -255,7 +254,6 @@ public class OllamaChatFrame {
     private JPanel sideBar() {
         JPanel ret = new JPanel();
         curCtxSize = new JLabel();
-        createdAt = new JLabel();
         outTokens = new JLabel();
         inTokens = new JLabel();
         tokensSec = new JLabel();
@@ -270,27 +268,21 @@ public class OllamaChatFrame {
         ret.add(curCtxSize, gbc);
         gbc.gridx = 0;
         gbc.gridy = 1;
-        ret.add(new JLabel("Created at"), gbc);
-        gbc.gridx = 1;
-        gbc.gridy = 1;
-        ret.add(createdAt, gbc);
-        gbc.gridx = 0;
-        gbc.gridy = 2;
         ret.add(new JLabel("In tokens"), gbc);
         gbc.gridx = 1;
-        gbc.gridy = 2;
+        gbc.gridy = 1;
         ret.add(inTokens, gbc);
         gbc.gridx = 0;
-        gbc.gridy = 3;
+        gbc.gridy = 2;
         ret.add(new JLabel("Out tokens"), gbc);
         gbc.gridx = 1;
-        gbc.gridy = 3;
+        gbc.gridy = 2;
         ret.add(outTokens, gbc);
         gbc.gridx = 0;
-        gbc.gridy = 4;
+        gbc.gridy = 3;
         ret.add(new JLabel("Tokens/sec"), gbc);
         gbc.gridx = 1;
-        gbc.gridy = 4;
+        gbc.gridy = 3;
         ret.add(tokensSec, gbc);
         ret.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(new Color(70, 206, 80), 5),
@@ -301,7 +293,6 @@ public class OllamaChatFrame {
 
     private void updateSideBar(Response resp) {
         curCtxSize.setText(Integer.toString(resp.context.size()));
-        createdAt.setText(resp.createdAt.toString());
         outTokens.setText(Integer.toString(resp.evalCount));
         inTokens.setText(Integer.toString(resp.promptEvalCount));
         tokensSec.setText(String.format("%.2f", 1e9 * resp.evalCount / resp.evalDuration));
@@ -328,7 +319,7 @@ public class OllamaChatFrame {
      *
      * @param fontSize in font points
      */
-    public static void setupGUI(float fontSize) {
+    public final void setupGUI(float fontSize) {
         Font defaultFont = UIManager.getFont("Label.font");
         Font useFont = defaultFont.deriveFont(fontSize);
         Set<Map.Entry<Object, Object>> entries = new HashSet<>(UIManager.getLookAndFeelDefaults().entrySet());
@@ -337,6 +328,8 @@ public class OllamaChatFrame {
                 UIManager.put(entry.getKey(), useFont);
             }
         }
+        chat.setFont(useFont);
+        input.setFont(useFont);
     }
 
     class Interact extends AbstractAction {
