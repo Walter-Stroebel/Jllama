@@ -14,10 +14,19 @@ public class OllamaClient {
 
     private static final String GENERATE = "/api/generate";
     private final String API_GENERATE;
-    private final TreeMap<String, LinkedList<Interaction>> context = new TreeMap<>();
-    private String branch = "default";
+    private final String endPoint;
+
+    public class ModelSession {
+
+        public AvailableModels.AvailableModel model;
+        public LinkedList<ModelInteraction> context;
+    }
+    public final TreeMap<String, ModelSession> sessions = new TreeMap<>();
+    public final TreeMap<String, String> curBranch = new TreeMap<>();
+    public String curModel = "";
 
     public OllamaClient(String endPoint) {
+        this.endPoint = endPoint;
         if (null == Ollama.config.lastEndpoint
                 || !Ollama.config.lastEndpoint.equalsIgnoreCase(endPoint)) {
             Ollama.config.lastEndpoint = endPoint;
@@ -33,14 +42,58 @@ public class OllamaClient {
      * @return null or the old contents of the branchName if it was not new.
      * @throws NullPointerException if you try to branch from nothing.
      */
-    public LinkedList<Interaction> newBranch(String branchName) {
-        LinkedList<Interaction> nBr = new LinkedList<>(context.get(branch));
-        branch = branchName;
-        return context.put(branchName, nBr);
+    public ModelSession newBranch(String branchName) {
+        ModelSession nbr = new ModelSession();
+        ModelSession obr = getSession();
+        nbr.context = new LinkedList<>(obr.context);
+        nbr.model = obr.model;
+        curBranch.put(nbr.model.name, branchName);
+        return sessions.put(branchName, nbr);
     }
 
-    private Integer[] getContext() {
-        LinkedList<Interaction> get = context.get(branch);
+    /**
+     * Start a new tree if the model has no tree.
+     *
+     * @param modelName Name of the model we will query.
+     */
+    public void newModel(String modelName) {
+        ModelSession session = getSession(modelName);
+        if (null == session || null == session.model || null == session.model.name || !session.model.name.equals(modelName)) {
+            Ollama.config.lastModel = modelName;
+            Ollama.config.update();
+            session = new ModelSession();
+            AvailableModels mods = Ollama.getAvailableModels().get(endPoint);
+            for (AvailableModels.AvailableModel am : mods.models) {
+                if (am.name.equals(modelName)) {
+                    session.model = am;
+                    break;
+                }
+            }
+            curBranch.put(modelName, modelName);
+            sessions.put(modelName, session);
+        }
+        curModel = modelName;
+    }
+
+    public ModelSession getSession(String modelName) {
+        String branch = curBranch.get(modelName);
+        if (null == branch) {
+            return null;
+        }
+        return sessions.get(branch);
+    }
+
+    public ModelSession getSession() {
+        return getSession(curModel);
+    }
+
+    public LinkedList<ModelInteraction> getInter() {
+        ModelSession get = getSession();
+        return null != get ? get.context : null;
+    }
+
+    public Integer[] getContext() {
+        LinkedList<ModelInteraction> get = getInter();
         if (null != get && !get.isEmpty()) {
             Integer[] ctx = new Integer[0];
             return get.getLast().response.context.toArray(ctx);
@@ -49,24 +102,23 @@ public class OllamaClient {
     }
 
     private void addResponse(Request rq, Response resp) {
-        LinkedList<Interaction> get = context.get(branch);
+        LinkedList<ModelInteraction> get = getInter();
         if (null == get) {
             get = new LinkedList<>();
-            context.put(branch, get);
+            getSession().context = get;
         }
-        get.add(new Interaction(rq, resp));
+        get.add(new ModelInteraction(rq, resp));
     }
 
     public Response askAndAnswer(String model, String prompt) throws Exception {
+        newModel(model);
         ObjectMapper mapper = Ollama.getMapper();
-
         Request rq = new Request();
         rq.model = model;
         rq.prompt = prompt;
         rq.context = getContext();
         String requestBody = mapper.writeValueAsString(rq);
         String response = sendRequest(requestBody);
-
         Response resp = mapper.readValue(response, Response.class);
         addResponse(rq, resp);
         return resp;
@@ -84,6 +136,7 @@ public class OllamaClient {
      * @throws Exception For reasons.
      */
     public Response askWithStream(String model, String prompt, StreamListener listener) throws Exception {
+        newModel(model);
         if (null == listener) {
             throw (new RuntimeException("Listener is null"));
         }
@@ -187,12 +240,5 @@ public class OllamaClient {
          * @return true to continue, false to stop.
          */
         boolean onResponseReceived(StreamedResponse responsePart);
-    }
-
-    /**
-     * @return the branch
-     */
-    public String getBranch() {
-        return branch;
     }
 }

@@ -170,24 +170,19 @@ public class OllamaCoder {
             }
         });
         buttons.add(new JToolBar.Separator());
-        String lsModel = Ollama.config.getLastModel();
         String lsHost = Ollama.config.getLastEndpoint();
-        for (Map.Entry<String, AvailableModels> e : Ollama.getAvailableModels().entrySet()) {
-            addToHosts(e.getKey());
-            if (0 == models.getItemCount()) {
-                for (AvailableModels.AvailableModel am : e.getValue().models) {
-                    models.addItem(am.name);
-                    if (null == lsHost) {
-                        lsHost = e.getKey();
-                    }
-                    if (null == lsModel) {
-                        lsModel = am.name;
-                    }
-                }
-            }
+        for (String e : Ollama.getAvailableModels().keySet()) {
+            addToHosts(e);
         }
         client = new OllamaClient(lsHost);
-        models.setSelectedItem(lsModel);
+        models.removeAllItems();
+        for (AvailableModels.AvailableModel am : Ollama.getAvailableModels().get(lsHost).models) {
+            models.addItem(am.name);
+        }
+        if (null != Ollama.config.lastModel) {
+            models.setSelectedItem(Ollama.config.lastModel);
+        }
+        models.invalidate();
         hosts.setSelectedItem(lsHost);
         hosts.addActionListener(new AddSelectHost());
         hosts.setEditable(true);
@@ -288,9 +283,7 @@ public class OllamaCoder {
 
                     @Override
                     protected Response doInBackground() throws Exception {
-                        Ollama.config.lastModel = (String) models.getSelectedItem();
-                        Ollama.config.update();
-                        Response resp = client.askWithStream(Ollama.config.lastModel, question, listener);
+                        Response resp = client.askWithStream((String) models.getSelectedItem(), question, listener);
                         return resp;
                     }
                 };

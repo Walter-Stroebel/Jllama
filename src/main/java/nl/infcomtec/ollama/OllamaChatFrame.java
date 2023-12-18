@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -62,12 +63,12 @@ import nl.infcomtec.tools.PandocConverter;
 public class OllamaChatFrame {
 
     private final JFrame frame;
-    private final JToolBar buttons = new JToolBar();
-    private final JTextArea chat = new JTextArea();
-    private final JTextArea input = new JTextArea(4, 80);
+    private final JToolBar buttons;
+    private final JTextArea chat;
+    private final JTextArea input;
     private OllamaClient client;
-    private final JComboBox<String> hosts = new JComboBox<>();
-    private final JComboBox<String> models = new JComboBox<>();
+    private final JComboBox<String> hosts;
+    private final JComboBox<String> models;
     private JLabel curCtxSize;
     private JLabel outTokens;
     private JLabel inTokens;
@@ -75,11 +76,27 @@ public class OllamaChatFrame {
     private final ExecutorService pool = Executors.newCachedThreadPool();
     private JLabel tokensSec;
 
+    private JLabel modFamily;
+    private JLabel modFamilies;
+    private JLabel modFormat;
+    private JLabel modParmSize;
+    private JLabel modQuant;
+
     /**
      * Ties all the bits and pieces together into a GUI.
      */
     public OllamaChatFrame() {
         setupGUI(Ollama.config.fontSize);
+        this.modQuant = new JLabel();
+        this.modParmSize = new JLabel();
+        this.modFormat = new JLabel();
+        this.modFamilies = new JLabel();
+        this.modFamily = new JLabel();
+        this.models = new JComboBox<>();
+        this.hosts = new JComboBox<>();
+        this.buttons = new JToolBar();
+        this.input = new JTextArea(4, 80);
+        this.chat = new JTextArea();
         frame = new JFrame("Ollama chat");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         Container cont = frame.getContentPane();
@@ -175,12 +192,7 @@ public class OllamaChatFrame {
             models.addItem(am.name);
         }
         if (null != Ollama.config.lastModel) {
-            for (int i = 0; i < models.getComponentCount(); i++) {
-                if (Ollama.config.lastModel.equals(models.getItemAt(i))) {
-                    models.setSelectedIndex(i);
-                    break;
-                }
-            }
+            models.setSelectedItem(Ollama.config.lastModel);
         }
         models.invalidate();
         hosts.setSelectedItem(lsHost);
@@ -284,6 +296,42 @@ public class OllamaChatFrame {
         gbc.gridx = 1;
         gbc.gridy = 3;
         ret.add(tokensSec, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        ret.add(new JLabel("Family"), gbc);
+        gbc.gridx = 1;
+        gbc.gridy = 4;
+        ret.add(modFamily, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 5;
+        ret.add(new JLabel("Families"), gbc);
+        gbc.gridx = 1;
+        gbc.gridy = 5;
+        ret.add(modFamilies, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 6;
+        ret.add(new JLabel("Format"), gbc);
+        gbc.gridx = 1;
+        gbc.gridy = 6;
+        ret.add(modFormat, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 7;
+        ret.add(new JLabel("ParamSize"), gbc);
+        gbc.gridx = 1;
+        gbc.gridy = 7;
+        ret.add(modParmSize, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 8;
+        ret.add(new JLabel("Quantization"), gbc);
+        gbc.gridx = 1;
+        gbc.gridy = 8;
+        ret.add(modQuant, gbc);
+
         ret.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(new Color(70, 206, 80), 5),
                 "Session"));
@@ -292,6 +340,12 @@ public class OllamaChatFrame {
     }
 
     private void updateSideBar(Response resp) {
+        OllamaClient.ModelSession session = client.getSession();
+        modFamily.setText(Objects.toString(session.model.details.family));
+        modFamilies.setText(Objects.toString(session.model.details.families));
+        modFormat.setText(Objects.toString(session.model.details.format));
+        modParmSize.setText(Objects.toString(session.model.details.parameterSize));
+        modQuant.setText(Objects.toString(session.model.details.quantizationLevel));
         curCtxSize.setText(Integer.toString(resp.context.size()));
         outTokens.setText(Integer.toString(resp.evalCount));
         inTokens.setText(Integer.toString(resp.promptEvalCount));
@@ -328,8 +382,6 @@ public class OllamaChatFrame {
                 UIManager.put(entry.getKey(), useFont);
             }
         }
-        chat.setFont(useFont);
-        input.setFont(useFont);
     }
 
     class Interact extends AbstractAction {
@@ -397,9 +449,7 @@ public class OllamaChatFrame {
 
                     @Override
                     protected Response doInBackground() throws Exception {
-                        Ollama.config.lastModel = (String) models.getSelectedItem();
-                        Ollama.config.update();
-                        Response resp = client.askWithStream(Ollama.config.lastModel, question, listener);
+                        Response resp = client.askWithStream((String) models.getSelectedItem(), question, listener);
                         return resp;
                     }
                 };

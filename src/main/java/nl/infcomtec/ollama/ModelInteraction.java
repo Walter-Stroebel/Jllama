@@ -5,12 +5,12 @@ package nl.infcomtec.ollama;
  *
  * @author Walter Stroebel
  */
-public class Interaction {
+public class ModelInteraction {
 
     public final Request request;
     public final Response response;
 
-    public Interaction(Request request, Response response) {
+    public ModelInteraction(Request request, Response response) {
         this.request = request;
         this.response = response;
     }
