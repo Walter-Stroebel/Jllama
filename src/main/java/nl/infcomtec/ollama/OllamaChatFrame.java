@@ -507,12 +507,20 @@ public class OllamaChatFrame {
 
                     @Override
                     protected Response doInBackground() throws Exception {
-                        Response resp = client.askWithStream(
-                                (String) models.getSelectedItem(),
-                                question,
-                                listener,
-                                uplImage);
-                        return resp;
+                        if (null == uplImage) {
+                            Response resp = client.askWithStream(
+                                    (String) models.getSelectedItem(),
+                                    question,
+                                    listener);
+                            return resp;
+                        } else {
+                            Response resp = client.askWithStream(
+                                    (String) models.getSelectedItem(),
+                                    question,
+                                    listener,
+                                    uplImage);
+                            return resp;
+                        }
                     }
                 };
                 chat.append("\n\n### Answer\n\n");

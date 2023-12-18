@@ -62,19 +62,16 @@ public class OllamaCoder {
                 UIManager.put(entry.getKey(), useFont);
             }
         }
-        chat.setFont(useFont);
-        input.setFont(useFont);
-        code.setFont(useFont);
     }
 
     private final JFrame frame;
-    private final JToolBar buttons = new JToolBar();
-    private final JTextArea chat = new JTextArea();
-    private final JTextArea code = new JTextArea();
-    private final JTextArea input = new JTextArea(4, 80);
+    private final JToolBar buttons;
+    private final JTextArea chat;
+    private final JTextArea code;
+    private final JTextArea input;
     private OllamaClient client;
-    private final JComboBox<String> hosts = new JComboBox<>();
-    private final JComboBox<String> models = new JComboBox<>();
+    private final JComboBox<String> hosts;
+    private final JComboBox<String> models;
     private final ExecutorService pool = Executors.newCachedThreadPool();
     private JScrollPane codePanel;
 
@@ -83,6 +80,12 @@ public class OllamaCoder {
      */
     public OllamaCoder() {
         setupGUI(Ollama.config.fontSize);
+        this.models = new JComboBox<>();
+        this.hosts = new JComboBox<>();
+        this.input = new JTextArea(4, 80);
+        this.code = new JTextArea();
+        this.chat = new JTextArea();
+        this.buttons = new JToolBar();
         frame = new JFrame("Ollama Coder");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         Container cont = frame.getContentPane();
@@ -93,31 +96,35 @@ public class OllamaCoder {
         code.setLineWrap(true);
         chat.setWrapStyleWord(true);
         code.setWrapStyleWord(true);
-        final JPopupMenu popupMenu = new JPopupMenu();
-        JMenuItem copy = new JMenuItem("Copy");
-        copy.addActionListener(new AbstractAction("Copy") {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
-                String selectedText = chat.getSelectedText();
-                if (null != selectedText) {
-                    Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-                    clipboard.setContents(new StringSelection(selectedText), null);
-                }
-            }
-        });
-        popupMenu.add(copy);
+        final JPopupMenu chatMenu = chatPopMenu();
         chat.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
                 if (e.isPopupTrigger()) {
-                    popupMenu.show(e.getComponent(), e.getX(), e.getY());
+                    chatMenu.show(e.getComponent(), e.getX(), e.getY());
                 }
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
                 if (e.isPopupTrigger()) {
-                    popupMenu.show(e.getComponent(), e.getX(), e.getY());
+                    chatMenu.show(e.getComponent(), e.getX(), e.getY());
+                }
+            }
+        });
+        final JPopupMenu codeMenu = codePopMenu();
+        code.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    codeMenu.show(e.getComponent(), e.getX(), e.getY());
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    codeMenu.show(e.getComponent(), e.getX(), e.getY());
                 }
             }
         });
@@ -153,6 +160,70 @@ public class OllamaCoder {
                 System.exit(1);
             }
         }
+    }
+
+    private JPopupMenu chatPopMenu() {
+        final JPopupMenu popupMenu = new JPopupMenu();
+        {
+            JMenuItem item = new JMenuItem("Copy");
+            item.addActionListener(new AbstractAction("Copy") {
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    String selectedText = chat.getSelectedText();
+                    if (null != selectedText) {
+                        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                        clipboard.setContents(new StringSelection(selectedText), null);
+                    }
+                }
+            });
+            popupMenu.add(item);
+        }
+        {
+            JMenuItem item = new JMenuItem("\u2192 Code");
+            item.addActionListener(new AbstractAction("Copy") {
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    String selectedText = chat.getSelectedText();
+                    if (null != selectedText) {
+                        code.setText(selectedText);
+                    }
+                }
+            });
+            popupMenu.add(item);
+        }
+        return popupMenu;
+    }
+
+    private JPopupMenu codePopMenu() {
+        final JPopupMenu popupMenu = new JPopupMenu();
+        {
+            JMenuItem item = new JMenuItem("Copy");
+            item.addActionListener(new AbstractAction("Copy") {
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    String selectedText = chat.getSelectedText();
+                    if (null != selectedText) {
+                        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                        clipboard.setContents(new StringSelection(selectedText), null);
+                    }
+                }
+            });
+            popupMenu.add(item);
+        }
+        {
+            JMenuItem item = new JMenuItem("\u2193 Input");
+            item.addActionListener(new AbstractAction("Copy") {
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    String selectedText = chat.getSelectedText();
+                    if (null != selectedText) {
+                        input.append(selectedText);
+                    }
+                }
+            });
+            popupMenu.add(item);
+        }
+        return popupMenu;
     }
 
     private void buttonBar() {
@@ -192,7 +263,40 @@ public class OllamaCoder {
         buttons.add(new JLabel("Models:"));
         buttons.add(models);
         buttons.add(new JToolBar.Separator());
+        buttons.add(new JButton(new AbstractAction("Start Vagrant") {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                if (null != vagrant) {
+                    vagrant.stop();
+                }
+                vagrant = new Vagrant();
+                vagrant.start();
+            }
+        }));
+        buttons.add(new JButton(new AbstractAction("Check Vagrant logs") {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                if (null != vagrant) {
+                    synchronized (vagrant.log) {
+                        String log = vagrant.log.toString();
+                        code.setText(log);
+                    }
+                }
+            }
+        }));
+        buttons.add(new JButton(new AbstractAction("Stop Vagrant") {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                if (null != vagrant) {
+                    vagrant.stop();
+                } else {
+                    vagrant = new Vagrant();
+                    vagrant.stop();
+                }
+            }
+        }));
     }
+    private Vagrant vagrant;
 
     private void addToHosts(String host) {
         for (int i = 0; i < hosts.getItemCount(); i++) {
