@@ -6,8 +6,10 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -18,6 +20,10 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,13 +35,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JEditorPane;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
@@ -81,6 +90,9 @@ public class OllamaChatFrame {
     private JLabel modFormat;
     private JLabel modParmSize;
     private JLabel modQuant;
+    private JLabel prevImage;
+
+    private BufferedImage uplImage;
 
     /**
      * Ties all the bits and pieces together into a GUI.
@@ -92,6 +104,7 @@ public class OllamaChatFrame {
         this.modFormat = new JLabel();
         this.modFamilies = new JLabel();
         this.modFamily = new JLabel();
+        this.prevImage = new JLabel();
         this.models = new JComboBox<>();
         this.hosts = new JComboBox<>();
         this.buttons = new JToolBar();
@@ -144,6 +157,36 @@ public class OllamaChatFrame {
         bottom.add(new JScrollPane(input));
         bottom.add(Box.createHorizontalStrut(10));
         bottom.add(new JButton(new Interact()));
+        bottom.add(new JButton(new AbstractAction("\u2191 image") {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                JFileChooser fileChooser = new JFileChooser();
+
+                int returnValue = fileChooser.showOpenDialog(frame);
+
+                if (returnValue == JFileChooser.APPROVE_OPTION) {
+                    File selectedFile = fileChooser.getSelectedFile();
+                    try {
+                        BufferedImage originalImage = ImageIO.read(selectedFile);
+
+                        if (originalImage.getHeight() != 256 || originalImage.getWidth() != 256) {
+                            Image scaledInstance = originalImage.getScaledInstance(256, 256, BufferedImage.SCALE_SMOOTH);
+                            BufferedImage resizedImage = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
+                            Graphics2D g2d = resizedImage.createGraphics();
+                            g2d.drawImage(scaledInstance, 0, 0, null);
+                            g2d.dispose();
+                            uplImage = resizedImage;
+                        } else {
+                            uplImage = originalImage;
+                        }
+                        updateSideBar(null);
+                    } catch (IOException ex) {
+                        Logger.getLogger(OllamaChatFrame.class.getName()).log(Level.SEVERE, null, ex);
+                        uplImage = null;
+                    }
+                }
+            }
+        }));
         bottom.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(new Color(135, 206, 250), 5),
                 "Input"));
@@ -332,6 +375,10 @@ public class OllamaChatFrame {
         gbc.gridy = 8;
         ret.add(modQuant, gbc);
 
+        gbc.gridx = 0;
+        gbc.gridy = 9;
+        ret.add(prevImage, gbc);
+
         ret.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(new Color(70, 206, 80), 5),
                 "Session"));
@@ -340,16 +387,27 @@ public class OllamaChatFrame {
     }
 
     private void updateSideBar(Response resp) {
-        OllamaClient.ModelSession session = client.getSession();
-        modFamily.setText(Objects.toString(session.model.details.family));
-        modFamilies.setText(Objects.toString(session.model.details.families));
-        modFormat.setText(Objects.toString(session.model.details.format));
-        modParmSize.setText(Objects.toString(session.model.details.parameterSize));
-        modQuant.setText(Objects.toString(session.model.details.quantizationLevel));
-        curCtxSize.setText(Integer.toString(resp.context.size()));
-        outTokens.setText(Integer.toString(resp.evalCount));
-        inTokens.setText(Integer.toString(resp.promptEvalCount));
-        tokensSec.setText(String.format("%.2f", 1e9 * resp.evalCount / resp.evalDuration));
+        if (null != resp) {
+            OllamaClient.ModelSession session = client.getSession();
+            modFamily.setText(Objects.toString(session.model.details.family));
+            if (null == session.model.details.families) {
+                modFamilies.setText("");
+            } else {
+                modFamilies.setText(Arrays.toString(session.model.details.families));
+            }
+            modFormat.setText(Objects.toString(session.model.details.format));
+            modParmSize.setText(Objects.toString(session.model.details.parameterSize));
+            modQuant.setText(Objects.toString(session.model.details.quantizationLevel));
+            curCtxSize.setText(Integer.toString(resp.context.size()));
+            outTokens.setText(Integer.toString(resp.evalCount));
+            inTokens.setText(Integer.toString(resp.promptEvalCount));
+            tokensSec.setText(String.format("%.2f", 1e9 * resp.evalCount / resp.evalDuration));
+        }
+        if (null == uplImage) {
+            prevImage.setIcon(null);
+        } else {
+            prevImage.setIcon(new ImageIcon(uplImage));
+        }
     }
 
     private void finishInit() {
@@ -449,7 +507,11 @@ public class OllamaChatFrame {
 
                     @Override
                     protected Response doInBackground() throws Exception {
-                        Response resp = client.askWithStream((String) models.getSelectedItem(), question, listener);
+                        Response resp = client.askWithStream(
+                                (String) models.getSelectedItem(),
+                                question,
+                                listener,
+                                uplImage);
                         return resp;
                     }
                 };

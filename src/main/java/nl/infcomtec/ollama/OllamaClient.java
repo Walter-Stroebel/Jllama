@@ -1,14 +1,19 @@
 package nl.infcomtec.ollama;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.awt.image.RenderedImage;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.LinkedList;
 import java.util.TreeMap;
+import javax.imageio.ImageIO;
 
 public class OllamaClient {
 
@@ -111,17 +116,47 @@ public class OllamaClient {
     }
 
     public Response askAndAnswer(String model, String prompt) throws Exception {
+        return askAndAnswer(model, prompt, (RenderedImage[]) null);
+    }
+
+    public Response askAndAnswer(String model, String prompt, RenderedImage... images) throws Exception {
         newModel(model);
         ObjectMapper mapper = Ollama.getMapper();
         Request rq = new Request();
         rq.model = model;
         rq.prompt = prompt;
         rq.context = getContext();
+        setReqImages(images, rq);
         String requestBody = mapper.writeValueAsString(rq);
         String response = sendRequest(requestBody);
         Response resp = mapper.readValue(response, Response.class);
         addResponse(rq, resp);
         return resp;
+    }
+
+    private void setReqImages(RenderedImage[] images, Request rq) throws IOException {
+        if (null != images) {
+            for (RenderedImage im : images) {
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                    ImageIO.write(im, "png", baos);
+                    baos.flush();
+                    String enc = Base64.getEncoder().encodeToString(baos.toByteArray());
+                    if (null == rq.images) {
+                        rq.images = new String[1];
+                        rq.images[0] = enc;
+                    } else {
+                        String[] oi = rq.images;
+                        rq.images = new String[oi.length + 1];
+                        System.arraycopy(oi, 0, rq.images, 0, oi.length);
+                        rq.images[oi.length] = enc;
+                    }
+                }
+            }
+        }
+    }
+
+    public Response askWithStream(String model, String prompt, StreamListener listener) throws Exception {
+        return askWithStream(model, prompt, listener, (RenderedImage[]) null);
     }
 
     /**
@@ -130,12 +165,13 @@ public class OllamaClient {
      * @param model The model to use.
      * @param prompt The question.
      * @param listener Callback.
+     * @param images For vision capable models.
      * @return Unlike the specification at
      * https://github.com/jmorganca/ollama/blob/main/docs/api.md, this will also
      * contain the full (concatenated) response in the response field.
      * @throws Exception For reasons.
      */
-    public Response askWithStream(String model, String prompt, StreamListener listener) throws Exception {
+    public Response askWithStream(String model, String prompt, StreamListener listener, RenderedImage... images) throws Exception {
         newModel(model);
         if (null == listener) {
             throw (new RuntimeException("Listener is null"));
@@ -147,6 +183,7 @@ public class OllamaClient {
         rq.prompt = prompt;
         rq.stream = true;
         rq.context = getContext();
+        setReqImages(images, rq);
         String requestBody = mapper.writeValueAsString(rq);
         Response resp = sendRequestWithStreaming(requestBody, listener);
         addResponse(rq, resp);

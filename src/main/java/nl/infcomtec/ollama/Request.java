@@ -21,6 +21,10 @@ public class Request {
      */
     public String format;
     /**
+     * a list of base64-encoded images (for multimodal models such as llava)
+     */
+    public String[] images;
+    /**
      * system prompt (overrides what is defined in the Modelfile)
      */
     public String system;
