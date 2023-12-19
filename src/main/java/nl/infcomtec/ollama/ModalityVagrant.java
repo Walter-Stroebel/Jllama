@@ -19,7 +19,7 @@ public class ModalityVagrant extends Modality {
     @Override
     protected void convert() {
         System.out.println("Vagrant exec: " + currentText);
-        outputText = vagrant.exec(currentText);
+        outputText = vagrant.execMarked(currentText);
     }
 
 }

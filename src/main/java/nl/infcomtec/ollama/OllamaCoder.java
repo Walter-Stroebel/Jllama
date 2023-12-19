@@ -75,11 +75,28 @@ public class OllamaCoder {
     private final ExecutorService pool = Executors.newCachedThreadPool();
     private JScrollPane codePanel;
 
+    private void startVagrant() {
+        vagrant = new Vagrant();
+        vagrant.onOutputReceived.set(new Vagrant.CallBack() {
+            @Override
+            public void cb(final String s) {
+                EventQueue.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        code.append(s);
+                    }
+                });
+            }
+        });
+        vagrant.start();
+    }
+
     /**
      * Ties all the bits and pieces together into a GUI.
      */
     public OllamaCoder() {
         setupGUI(Ollama.config.fontSize);
+        startVagrant();
         this.models = new JComboBox<>();
         this.hosts = new JComboBox<>();
         this.input = new JTextArea(4, 80);
@@ -166,7 +183,7 @@ public class OllamaCoder {
         final JPopupMenu popupMenu = new JPopupMenu();
         {
             JMenuItem item = new JMenuItem("Copy");
-            item.addActionListener(new AbstractAction("Copy") {
+            item.addActionListener(new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     String selectedText = chat.getSelectedText();
@@ -180,7 +197,7 @@ public class OllamaCoder {
         }
         {
             JMenuItem item = new JMenuItem("\u2192 Code");
-            item.addActionListener(new AbstractAction("Copy") {
+            item.addActionListener(new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     String selectedText = chat.getSelectedText();
@@ -198,27 +215,43 @@ public class OllamaCoder {
         final JPopupMenu popupMenu = new JPopupMenu();
         {
             JMenuItem item = new JMenuItem("Copy");
-            item.addActionListener(new AbstractAction("Copy") {
+            item.addActionListener(new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    String selectedText = chat.getSelectedText();
-                    if (null != selectedText) {
-                        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-                        clipboard.setContents(new StringSelection(selectedText), null);
+                    String selectedText = code.getSelectedText();
+                    if (null == selectedText) {
+                        selectedText = code.getText();
                     }
+                    Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                    clipboard.setContents(new StringSelection(selectedText), null);
                 }
             });
             popupMenu.add(item);
         }
         {
             JMenuItem item = new JMenuItem("\u2193 Input");
-            item.addActionListener(new AbstractAction("Copy") {
+            item.addActionListener(new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    String selectedText = chat.getSelectedText();
-                    if (null != selectedText) {
-                        input.append(selectedText);
+                    String selectedText = code.getSelectedText();
+                    if (null == selectedText) {
+                        selectedText = code.getText();
                     }
+                    input.append(selectedText);
+                }
+            });
+            popupMenu.add(item);
+        }
+        {
+            JMenuItem item = new JMenuItem("Python");
+            item.addActionListener(new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    String selectedText = code.getSelectedText();
+                    if (null == selectedText) {
+                        selectedText = code.getText();
+                    }
+                    vagrant.exec("python3", selectedText);
                 }
             });
             popupMenu.add(item);
@@ -269,8 +302,7 @@ public class OllamaCoder {
                 if (null != vagrant) {
                     vagrant.stop();
                 }
-                vagrant = new Vagrant();
-                vagrant.start();
+                startVagrant();
             }
         }));
         buttons.add(new JButton(new AbstractAction("Check Vagrant logs") {

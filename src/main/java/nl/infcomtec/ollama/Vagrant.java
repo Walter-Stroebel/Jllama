@@ -3,15 +3,18 @@ package nl.infcomtec.ollama;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.InputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import nl.infcomtec.tools.ARROWS;
 import nl.infcomtec.tools.ToolManager;
 
 /**
@@ -24,24 +27,31 @@ public class Vagrant extends ToolManager {
     public static final File VAGRANT_DIR = new File(System.getProperty("user.home"), "vagrant/Worker");
     public static final File VAGRANT_KEY = new File(VAGRANT_DIR, ".vagrant/machines/default/virtualbox/private_key");
 
-    public Vagrant() {
-    }
-
     public static final String MARK_START = "$#";
     public static final String MARK_END = "#$";
+    private final AtomicReference<String> input = new AtomicReference<>(null);
     private com.jcraft.jsch.Session session;
     public final AtomicReference<Step> state = new AtomicReference<>(Step.stopped);
     public final StringBuilder log = new StringBuilder();
     private final String EOLN = System.lineSeparator();
-    private final int MAX_OUTPUT = 20000;
+    public AtomicReference<CallBack> onStateChange = new AtomicReference<>(null);
+    public AtomicReference<CallBack> onInputPassed = new AtomicReference<>(null);
+    public AtomicReference<CallBack> onOutputReceived = new AtomicReference<>(null);
+
+    public Vagrant() {
+    }
 
     public void stop() {
+        Step old = state.get();
         state.set(Step.stop);
+        doCallBack(onStateChange, old.name(), state.get().name());
         new Thread(this).start();
     }
 
     public void start() {
+        Step old = state.get();
         state.set(Step.start);
+        doCallBack(onStateChange, old.name(), state.get().name());
         new Thread(this).start();
     }
 
@@ -53,7 +63,6 @@ public class Vagrant extends ToolManager {
     }
 
     public void log(String... msg) {
-        System.out.println(Arrays.deepToString(msg));
         synchronized (log) {
             logTimeStamp();
             if (null == msg) {
@@ -103,10 +112,14 @@ public class Vagrant extends ToolManager {
                     config.put("StrictHostKeyChecking", "no");
                     session.setConfig(config);
                     session.connect();
+                    Step old = state.get();
                     state.set(Step.running);
+                    doCallBack(onStateChange, old.name(), state.get().name());
                 } catch (Exception e) {
                     log("Failed to connect to Vagrant:", e.getMessage());
+                    Step old = state.get();
                     state.set(Step.stopped);
+                    doCallBack(onStateChange, old.name(), state.get().name());
                 }
                 break;
             case stop:
@@ -133,18 +146,10 @@ public class Vagrant extends ToolManager {
     /**
      * Parse and execute.
      *
-     * @param text
+     * @param text with markers.
      * @return
      */
-    public String exec(String text) {
-        while (Step.running != state.get()) {
-            System.out.println("Waiting for vagrant");
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(Vagrant.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
+    public String execMarked(String text) {
         StringBuilder sb = new StringBuilder(text);
         StringBuilder output = new StringBuilder();
         int cmdStart = sb.indexOf(MARK_START);
@@ -158,19 +163,32 @@ public class Vagrant extends ToolManager {
             }
         }
         // any non-whitespace left plus any output
-        if (sb.length() > MAX_OUTPUT) {
-            sb.setLength(MAX_OUTPUT / 2);
-            sb.append(System.lineSeparator()).append("*** TRUNCATED ***");
-        }
-        if (output.length() + sb.length() > MAX_OUTPUT) {
-            output.setLength(MAX_OUTPUT / 2);
-            output.append(System.lineSeparator()).append("*** TRUNCATED ***");
-        }
         String disp = sb.toString().trim() + System.lineSeparator() + output.toString();
         return disp;
     }
 
+    /**
+     * Execute.
+     *
+     * @param cmd command.
+     * @param input Optional input for the command.
+     * @return
+     */
+    public String exec(String cmd, String input) {
+        StringBuilder output = new StringBuilder();
+        this.input.set(input);
+        execOnBox(cmd, output);
+        return output.toString();
+    }
+
     private void execOnBox(final String cmd, final StringBuilder output) {
+        while (Step.running != state.get()) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Vagrant.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
         try {
             log("Vagrant execute:", cmd);
             final Channel channel = session.openChannel("exec");
@@ -180,29 +198,79 @@ public class Vagrant extends ToolManager {
             ((ChannelExec) channel).setErrStream(errStream);
 
             channel.connect();
-
-            final InputStream in = channel.getInputStream();
-            final byte[] tmp = new byte[1024];
-            int offset = output.length();
-            while (true) {
-                int i = in.read(tmp, 0, 1024);
-                if (i < 0) {
-                    break;
+            final String inp = input.getAndSet(null);
+            if (null != inp) {
+                final OutputStream outStream = channel.getOutputStream();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            byte[] inputBytes = inp.getBytes();
+                            int offset = 0;
+                            int chunkSize = 1024;
+                            while (offset < inputBytes.length) {
+                                int length = Math.min(chunkSize, inputBytes.length - offset);
+                                outStream.write(inputBytes, offset, length);
+                                doCallBack(onInputPassed, inputBytes, offset, length);
+                                outStream.flush();
+                                offset += length;
+                            }
+                        } catch (IOException e) {
+                            log("Error writing input to channel:", e.getMessage());
+                        } finally {
+                            try {
+                                outStream.close();
+                            } catch (IOException e) {
+                                log("Error closing output stream:", e.getMessage());
+                            }
+                        }
+                    }
+                }).start();
+            }
+            final BufferedReader bfr;
+            try {
+                bfr = new BufferedReader(new InputStreamReader(channel.getInputStream()));
+                for (String line = bfr.readLine(); null != line; line = bfr.readLine()) {
+                    doCallBack(onOutputReceived, line);
+                    doCallBack(onOutputReceived, System.lineSeparator());
+                    output.append(line).append(System.lineSeparator());
                 }
-                output.append(new String(tmp, 0, i));
-                if (channel.isClosed()) {
-                    break;
-                }
+            } catch (IOException e) {
+                Logger.getLogger(Vagrant.class.getName()).log(Level.SEVERE, null, e);
             }
 
             // Append stderr to output
             output.append(errStream.toString());
 
             channel.disconnect();
-            log("Output:", output.substring(offset));
+
+            log("Output:", output.toString());
         } catch (Exception e) {
             log("Failed to execute on Vagrant:", e.getMessage());
+            Step old = state.get();
             state.set(Step.stopped);
+            doCallBack(onStateChange, old.name(), state.get().name());
+        }
+    }
+
+    private void doCallBack(AtomicReference<CallBack> cb, String s) {
+        CallBack get = cb.get();
+        if (null != get) {
+            get.cb(s);
+        }
+    }
+
+    private void doCallBack(AtomicReference<CallBack> cb, String f, String t) {
+        CallBack get = cb.get();
+        if (null != get) {
+            get.cb(f + ARROWS.RIGHT + t);
+        }
+    }
+
+    private void doCallBack(AtomicReference<CallBack> cb, byte[] buf, int offset, int length) {
+        CallBack get = cb.get();
+        if (null != get) {
+            get.cb(new String(buf, offset, length, StandardCharsets.UTF_8));
         }
     }
 
@@ -210,4 +278,8 @@ public class Vagrant extends ToolManager {
         stopped, start, running, stop
     }
 
+    public interface CallBack {
+
+        void cb(String s);
+    }
 }
