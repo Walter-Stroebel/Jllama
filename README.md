@@ -27,6 +27,7 @@ utilities on your behalf.
 - **PlantUML support:** Most models will be able to output an UML
 class diagram from code you described or were working on with the model.
 - **Vagrant support:** Letting the model run arbitrary code on your live system is *NOT* a good idea. However, running a vagrant instance and allowing it to _curl_ it's little hearth out inside of that is fairly safe and super powerful. This is working but unlike ChatGPT, these smaller models get quite confused by this. So it has limited use for now.
-- **Coding support:** WIP
+
+## Special use cases.
 - **Debate:** Have two models hash it out against each other (or themselves) and have a model judge the result. Tested with quite amazing results, IMHO: [Sample run in DebateDemo.java](debateDemo.md)
 - **Mix of Experts:** Pose the same question to model(s) with a prefix prompt to behave as an "expert". Integrate the results for a holistic view.
