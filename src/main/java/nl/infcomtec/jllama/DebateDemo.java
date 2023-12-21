@@ -1,6 +1,6 @@
 /*
  */
-package nl.infcomtec.ollama;
+package nl.infcomtec.jllama;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;

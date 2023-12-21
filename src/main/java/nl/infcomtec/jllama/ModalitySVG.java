@@ -1,4 +1,4 @@
-package nl.infcomtec.ollama;
+package nl.infcomtec.jllama;
 
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;

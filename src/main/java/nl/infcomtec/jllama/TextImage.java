@@ -1,6 +1,6 @@
 /*
  */
-package nl.infcomtec.ollama;
+package nl.infcomtec.jllama;
 
 import java.awt.BorderLayout;
 import java.awt.Container;

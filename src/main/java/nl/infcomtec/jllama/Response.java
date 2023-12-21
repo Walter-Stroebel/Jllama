@@ -1,4 +1,4 @@
-package nl.infcomtec.ollama;
+package nl.infcomtec.jllama;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;

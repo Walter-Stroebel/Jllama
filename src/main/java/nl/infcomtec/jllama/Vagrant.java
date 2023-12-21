@@ -1,4 +1,4 @@
-package nl.infcomtec.ollama;
+package nl.infcomtec.jllama;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;

@@ -1,10 +1,10 @@
-package nl.infcomtec.ollama;
+package nl.infcomtec.jllama;
 
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
-import static nl.infcomtec.ollama.Ollama.WORK_DIR;
+import static nl.infcomtec.jllama.Ollama.WORK_DIR;
 
 /**
  * Converts text to image if text is valid PlantUML.

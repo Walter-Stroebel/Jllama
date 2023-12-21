@@ -1,4 +1,4 @@
-package nl.infcomtec.ollama;
+package nl.infcomtec.jllama;
 
 /**
  * One step in a model interaction.

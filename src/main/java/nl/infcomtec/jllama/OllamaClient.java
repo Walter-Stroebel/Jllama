@@ -1,4 +1,4 @@
-package nl.infcomtec.ollama;
+package nl.infcomtec.jllama;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.awt.image.RenderedImage;

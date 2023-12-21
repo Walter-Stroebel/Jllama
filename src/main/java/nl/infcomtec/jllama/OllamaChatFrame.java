@@ -1,4 +1,4 @@
-package nl.infcomtec.ollama;
+package nl.infcomtec.jllama;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -215,13 +215,6 @@ public class OllamaChatFrame {
             @Override
             public void actionPerformed(ActionEvent ae) {
                 System.exit(0);
-            }
-        });
-        buttons.add(new AbstractAction("Code") {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
-                frame.dispose();
-                new OllamaCoder();
             }
         });
         buttons.add(new JToolBar.Separator());
