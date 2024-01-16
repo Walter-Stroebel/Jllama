@@ -269,7 +269,7 @@ public class OllamaChatFrame {
             public void actionPerformed(ActionEvent ae) {
                 try {
                     String text = chat.getSelectedText();
-                    DallEClient dale = new DallEClient();
+                    DallEClient dale = new DallEClient(Ollama.config.openAIKey);
                     ImageObject io = new ImageObject(dale.getImage(text));
                     ImageViewer iv = new ImageViewer(io);
                     iv.getScalePanFrame();

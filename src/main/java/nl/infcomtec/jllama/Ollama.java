@@ -181,29 +181,37 @@ public class Ollama {
     public static TreeMap<String, AvailableModels> fetchAvailableModels() {
         TreeMap<String, AvailableModels> ret = new TreeMap<>();
         for (String endPoint : config.ollamas) {
-            try {
-                URL url = new URL(endPoint + TAGS);
-                HttpURLConnection con = (HttpURLConnection) url.openConnection();
-                con.setRequestMethod("GET");
-
-                try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), "utf-8"))) {
-                    StringBuilder response = new StringBuilder();
-                    String responseLine;
-                    while ((responseLine = br.readLine()) != null) {
-                        response.append(responseLine.trim());
-                    }
-                    ret.put(endPoint, getMapper().readValue(response.toString(), AvailableModels.class));
-                } catch (Exception any) {
-                    System.out.println("Endpoint " + url + " is not responding.");
-                    System.out.println("Error: " + any.getMessage());
-                } finally {
-                    con.disconnect();
-                }
-            } catch (Exception ex) {
-                Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, ex);
+            AvailableModels avm = fetchAvailableModels(endPoint);
+            if (null != avm) {
+                ret.put(endPoint, avm);
             }
         }
         return models = ret;
+    }
+
+    public static AvailableModels fetchAvailableModels(String endPoint) {
+        try {
+            URL url = new URL(endPoint + TAGS);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
+
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), "utf-8"))) {
+                StringBuilder response = new StringBuilder();
+                String responseLine;
+                while ((responseLine = br.readLine()) != null) {
+                    response.append(responseLine.trim());
+                }
+                return getMapper().readValue(response.toString(), AvailableModels.class);
+            } catch (Exception any) {
+                System.out.println("Endpoint " + url + " is not responding.");
+                System.out.println("Error: " + any.getMessage());
+            } finally {
+                con.disconnect();
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
     }
 
 }

@@ -21,6 +21,11 @@ public class OllamaClient {
     private final String API_GENERATE;
     private final String endPoint;
 
+    public void clear() {
+        sessions.clear();
+        newModel(curModel);
+    }
+
     public class ModelSession {
 
         public AvailableModels.AvailableModel model;
@@ -32,10 +37,12 @@ public class OllamaClient {
 
     public OllamaClient(String endPoint) {
         this.endPoint = endPoint;
-        if (null == Ollama.config.lastEndpoint
-                || !Ollama.config.lastEndpoint.equalsIgnoreCase(endPoint)) {
-            Ollama.config.lastEndpoint = endPoint;
-            Ollama.config.update();
+        if (null != Ollama.config) {
+            if (null == Ollama.config.lastEndpoint
+                    || !Ollama.config.lastEndpoint.equalsIgnoreCase(endPoint)) {
+                Ollama.config.lastEndpoint = endPoint;
+                Ollama.config.update();
+            }
         }
         API_GENERATE = endPoint + GENERATE;
     }
@@ -63,20 +70,22 @@ public class OllamaClient {
      */
     public void newModel(String modelName) {
         ModelSession session = getSession(modelName);
-        if (null == session || null == session.model || null == session.model.name || !session.model.name.equals(modelName)) {
-            Ollama.config.lastModel = modelName;
-            Ollama.config.update();
-            session = new ModelSession();
-            AvailableModels mods = Ollama.getAvailableModels().get(endPoint);
-            for (AvailableModels.AvailableModel am : mods.models) {
-                if (am.name.equals(modelName)) {
-                    session.model = am;
-                    break;
-                }
+        if (null != Ollama.config) {
+            if (null == session || null == session.model || null == session.model.name || !session.model.name.equals(modelName)) {
+                Ollama.config.lastModel = modelName;
+                Ollama.config.update();
             }
-            curBranch.put(modelName, modelName);
-            sessions.put(modelName, session);
         }
+        session = new ModelSession();
+        AvailableModels mods = Ollama.getAvailableModels().get(endPoint);
+        for (AvailableModels.AvailableModel am : mods.models) {
+            if (am.name.equals(modelName)) {
+                session.model = am;
+                break;
+            }
+        }
+        curBranch.put(modelName, modelName);
+        sessions.put(modelName, session);
         curModel = modelName;
     }
 

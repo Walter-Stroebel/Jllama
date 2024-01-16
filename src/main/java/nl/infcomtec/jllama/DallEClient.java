@@ -14,11 +14,13 @@ import nl.infcomtec.tools.ImageConverter;
 public class DallEClient {
 
     private static final String ENDPOINT = "https://api.openai.com/v1/images/generations";
+    private String key;
 
-    public DallEClient() {
-        if (null == Ollama.config.openAIKey || Ollama.config.openAIKey.isEmpty()) {
+    public DallEClient(String key) {
+        if (null == key || key.isEmpty()) {
             throw new RuntimeException("No OpenAI key");
         }
+        this.key = key;
     }
 
     public BufferedImage getImage(String prompt) throws Exception {
@@ -65,7 +67,7 @@ public class DallEClient {
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("POST");
         con.setRequestProperty("Content-Type", "application/json");
-        con.setRequestProperty("Authorization", "Bearer " + Ollama.config.openAIKey);
+        con.setRequestProperty("Authorization", "Bearer " + key);
         con.setDoOutput(true);
         System.out.println(con);
         System.out.println(requestBody);
