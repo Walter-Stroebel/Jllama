@@ -1,5 +1,5 @@
 # 2024-01-21: Quick update
-This project was reference from LinkedIn, for those of you coming from there, this code is not exactly "ready to run", you will need
+This project was referenced from LinkedIn, for those of you coming from there, this code is not exactly "ready to run", you will need
 some bits and pieces ... like Ollama itself!
 
 If you want to look at the embedding stuff, start at Embed.java, it is an alternative main() entry point.
