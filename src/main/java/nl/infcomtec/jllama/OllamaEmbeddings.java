@@ -21,6 +21,22 @@ public class OllamaEmbeddings {
     }
 
     public Embeddings getEmbeddings(String prompt) throws Exception {
+        try {
+            // on rare occasions Ollama dies (out of memory?), try twice
+            ObjectMapper mapper = Ollama.getMapper();
+            Embeddings ret = new Embeddings();
+            ret.request = new Embeddings.Request();
+            ret.request.model = model;
+            ret.request.prompt = prompt;
+            String requestBody = mapper.writeValueAsString(ret.request);
+            String response = sendRequest(requestBody);
+            ret.response = mapper.readValue(response, Embeddings.Response.class);
+            return ret;
+        } catch (Exception any) {
+            System.err.println("First attempt failed: " + any.getMessage());
+            // give ollama a moment to restart
+            Thread.sleep(10000);
+        }
         ObjectMapper mapper = Ollama.getMapper();
         Embeddings ret = new Embeddings();
         ret.request = new Embeddings.Request();

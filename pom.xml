@@ -5,6 +5,13 @@
     <artifactId>Jllama</artifactId>
     <version>1.0</version>
     <packaging>jar</packaging>
+     <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Walter=Stroebel Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/Walter-Stroebel/Jllama/</url>
+        </repository>
+    </distributionManagement>
     <dependencies>
         <dependency>
             <groupId>com.jcraft</groupId>
