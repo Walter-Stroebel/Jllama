@@ -5,6 +5,8 @@
     <artifactId>Jllama</artifactId>
     <version>1.0</version>
     <packaging>jar</packaging>
+    <name>Jllama</name>
+            <url>https://github.com/Walter-Stroebel/Jllama/</url>
      <distributionManagement>
         <repository>
             <id>github</id>
