@@ -1,9 +1,3 @@
-# 2024-01-21: Quick update
-This project was referenced from LinkedIn, for those of you coming from there, this code is not exactly "ready to run", you will need
-some bits and pieces ... like Ollama itself!
-
-If you want to look at the embedding stuff, start at Embed.java, it is an alternative main() entry point.
-
 # What is this?
 This project offers Java support and a lot of extra functionalities for the fantastic Ollama project (https://ollama.ai/).
 
@@ -37,3 +31,5 @@ class diagram from code you described or were working on with the model.
 ## Special use cases.
 - **Debate:** Have two models hash it out against each other (or themselves) and have a model judge the result. Tested with quite amazing results, IMHO: [Sample run in DebateDemo.java](debateDemo.md)
 - **Mix of Experts:** Pose the same question to model(s) with a prefix prompt to behave as an "expert". Integrate the results for a holistic view.
+- **Embeddings:** This has moved to its own project, 
+[here on GitHub](https://github.com/Walter-Stroebel/Embedding). 

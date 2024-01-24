@@ -5,7 +5,6 @@ import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.EventQueue;
-import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -24,12 +23,10 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -54,7 +51,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JToolBar;
 import javax.swing.SwingWorker;
-import javax.swing.UIManager;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 import nl.infcomtec.simpleimage.ImageObject;
@@ -98,7 +94,7 @@ public class OllamaChatFrame {
      * Ties all the bits and pieces together into a GUI.
      */
     public OllamaChatFrame() {
-        setupGUI(Ollama.config.fontSize);
+        Ollama.setupGUI();
         this.modQuant = new JLabel();
         this.modParmSize = new JLabel();
         this.modFormat = new JLabel();
@@ -417,22 +413,6 @@ public class OllamaChatFrame {
                 Ollama.config.update(frame.getBounds());
             }
         });
-    }
-
-    /**
-     * Quick &amp; Dirty fix for large monitors.
-     *
-     * @param fontSize in font points
-     */
-    public final void setupGUI(float fontSize) {
-        Font defaultFont = UIManager.getFont("Label.font");
-        Font useFont = defaultFont.deriveFont(fontSize);
-        Set<Map.Entry<Object, Object>> entries = new HashSet<>(UIManager.getLookAndFeelDefaults().entrySet());
-        for (Map.Entry<Object, Object> entry : entries) {
-            if (entry.getKey().toString().endsWith(".font")) {
-                UIManager.put(entry.getKey(), useFont);
-            }
-        }
     }
 
     class Interact extends AbstractAction {

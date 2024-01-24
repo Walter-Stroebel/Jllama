@@ -1,5 +1,6 @@
 package nl.infcomtec.jllama;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.awt.Rectangle;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -10,6 +11,7 @@ import java.util.logging.Logger;
  *
  * @author Walter Stroebel
  */
+@JsonIgnoreProperties(ignoreUnknown = true) // Ignore unknown fields during deserialization
 public class OllamaConfig {
 
     public int x;

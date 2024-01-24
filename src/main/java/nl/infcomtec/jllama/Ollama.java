@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import com.formdev.flatlaf.FlatDarkLaf;
+import java.awt.Font;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
@@ -14,12 +16,16 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.UIManager;
 
 /**
  * Main class.
@@ -47,6 +53,23 @@ public class Ollama {
     public static void main(String[] args) {
         init();
         new OllamaChatFrame();
+    }
+
+    /**
+     * Set up Swing.
+     *
+     * @param fontSize in font points
+     */
+    public final static void setupGUI() {
+        FlatDarkLaf.setup();
+        Font defaultFont = UIManager.getFont("Label.font");
+        Font useFont = defaultFont.deriveFont(config.fontSize);
+        Set<Map.Entry<Object, Object>> entries = new HashSet<>(UIManager.getLookAndFeelDefaults().entrySet());
+        for (Map.Entry<Object, Object> entry : entries) {
+            if (entry.getKey().toString().endsWith(".font")) {
+                UIManager.put(entry.getKey(), useFont);
+            }
+        }
     }
 
     public static void init() {
