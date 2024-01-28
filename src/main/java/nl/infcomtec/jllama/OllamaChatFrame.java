@@ -86,6 +86,7 @@ public class OllamaChatFrame {
     private JLabel modFormat;
     private JLabel modParmSize;
     private JLabel modQuant;
+    private JLabel modParMod;
     private JLabel prevImage;
 
     private BufferedImage uplImage;
@@ -96,6 +97,7 @@ public class OllamaChatFrame {
     public OllamaChatFrame() {
         Ollama.setupGUI();
         this.modQuant = new JLabel();
+        this.modParMod = new JLabel();
         this.modParmSize = new JLabel();
         this.modFormat = new JLabel();
         this.modFamilies = new JLabel();
@@ -366,6 +368,13 @@ public class OllamaChatFrame {
 
         gbc.gridx = 0;
         gbc.gridy = 9;
+        ret.add(new JLabel("ParentModel"), gbc);
+        gbc.gridx = 1;
+        gbc.gridy = 9;
+        ret.add(modParMod, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 10;
         ret.add(prevImage, gbc);
 
         ret.setBorder(BorderFactory.createTitledBorder(
@@ -387,6 +396,8 @@ public class OllamaChatFrame {
             modFormat.setText(Objects.toString(session.model.details.format));
             modParmSize.setText(Objects.toString(session.model.details.parameterSize));
             modQuant.setText(Objects.toString(session.model.details.quantizationLevel));
+            modParMod.setText(Objects.toString(session.model.model) + "/"
+                    + Objects.toString(session.model.details.parentModel));
             curCtxSize.setText(Integer.toString(resp.context.size()));
             outTokens.setText(Integer.toString(resp.evalCount));
             inTokens.setText(Integer.toString(resp.promptEvalCount));

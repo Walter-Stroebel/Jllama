@@ -19,11 +19,14 @@ public class AvailableModels {
         public String parameterSize;
         @JsonProperty(value = "quantization_level")
         public String quantizationLevel;
+        @JsonProperty(value = "parent_model")
+        public String parentModel;
     }
 
     public static class AvailableModel {
 
         public String name;
+        public String model;
         @JsonProperty(value = "modified_at")
         public LocalDateTime modifiedAt;
         public long size;
