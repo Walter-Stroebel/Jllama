@@ -104,9 +104,26 @@ public class Vagrant extends ToolManager {
                     log("Vagrant error output:" + stderrBuilder.toString());
                 }
                 stderrBuilder.setLength(0);
+
                 try {
+                    /*
+                    com.jcraft.jsch.Logger logger = new com.jcraft.jsch.Logger() {
+                        @Override
+                        public boolean isEnabled(int level) {
+                            return true;
+                        }
+
+                        @Override
+                        public void log(int level, String message) {
+                            System.out.println(level + " " + message);
+                        }
+                    };
+                    JSch.setLogger(logger);
+                     */
                     JSch jsch = new JSch();
+                    //System.out.println("Key: " + Files.readString(VAGRANT_KEY.toPath()));
                     jsch.addIdentity(VAGRANT_KEY.getAbsolutePath());
+                    //System.out.println(jsch.getIdentityNames());
                     session = jsch.getSession("vagrant", "localhost", 2222);
                     java.util.Properties config = new java.util.Properties();
                     config.put("StrictHostKeyChecking", "no");

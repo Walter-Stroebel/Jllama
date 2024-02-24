@@ -32,4 +32,5 @@ class diagram from code you described or were working on with the model.
 - **Debate:** Have two models hash it out against each other (or themselves) and have a model judge the result. Tested with quite amazing results, IMHO: [Sample run in DebateDemo.java](debateDemo.md)
 - **Mix of Experts:** Pose the same question to model(s) with a prefix prompt to behave as an "expert". Integrate the results for a holistic view.
 - **Embeddings:** This has moved to its own project, 
-[here on GitHub](https://github.com/Walter-Stroebel/Embedding). 
+[here on GitHub](https://github.com/Walter-Stroebel/Embedding). **Update 24-02-24**: With Ollama 0.1.26 we got Nomic-embed-text, see Nomic.java for some simple tests. 
+

@@ -47,6 +47,18 @@ public class Request {
     public Boolean stream = false;
     public Integer[] context;
     /**
+     * Keep alive: the time the Ollama service keeps the model loaded.
+     *
+     * Documentation is missing, examples state strings like 5m, 5s and 8h. The
+     * default is 5m.
+     *
+     * Also mentioned (somewhere) is "passing a negative value is forever".
+     *
+     * TODO: update this when documented.
+     */
+    @JsonProperty(value = "keep_alive")
+    public String keepAlive;
+    /**
      * additional model parameters listed in the documentation for the Modelfile
      * such as temperature
      */

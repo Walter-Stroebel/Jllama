@@ -8,7 +8,7 @@ import java.io.File;
 import javax.imageio.ImageIO;
 
 /**
- * Embeddings tests
+ * Embeddings tests / demos
  *
  * @author walter
  */
@@ -23,7 +23,7 @@ public class Embed {
             OllamaEmbeddings em = new OllamaEmbeddings(Ollama.config.lastEndpoint, mod.name);
             Embeddings embeddings = em.getEmbeddings("Why is the sky blue?");
             System.out.println(embeddings);
-            BufferedImage toImage = toImage(embeddings);
+            BufferedImage toImage = embeddings.toImage(true);
             Image im = toImage.getScaledInstance(OUT_DIM, OUT_DIM, BufferedImage.SCALE_DEFAULT);
             toImage = new BufferedImage(OUT_DIM, OUT_CAP, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g = toImage.createGraphics();
@@ -64,48 +64,6 @@ public class Embed {
             f2.setLocation(f2.getLocation().x + 400, f2.getLocation().y);
         }
          */
-    }
-
-    public static BufferedImage toImage(Embeddings em) {
-        int w = (int) Math.round(Math.sqrt(em.response.embedding.length));
-        int h = em.response.embedding.length / w;
-        if (w * h < em.response.embedding.length) {
-            h++;
-        }
-        BufferedImage ret = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-        double min = Double.POSITIVE_INFINITY;
-        double max = Double.NEGATIVE_INFINITY;
-        for (double d : em.response.embedding) {
-            min = Math.min(min, d);
-            max = Math.max(max, d);
-        }
-        min = Math.log(-min);
-        max = Math.log(max);
-        System.out.format("WxH=%dx%d, MiniMax=%.2f - %.2f\n", w, h, min, max);
-        double rf = 255.0 / min;
-        double bf = 255 / max;
-        int x = 0;
-        int y = 0;
-        for (double d : em.response.embedding) {
-            double r, b;
-            if (d < 0) {
-                r = Math.log(-d) * rf;
-                b = 0;
-            } else {
-                r = 0;
-                b = Math.log(d) * bf;
-            }
-            r = Math.max(0, Math.min(255, r));
-            b = Math.max(0, Math.min(255, b));
-            Color c = new Color((int) r, 64 + (int) ((r + b) / 4), (int) b, 255);
-            ret.setRGB(x, y, c.getRGB());
-            x++;
-            if (x >= w) {
-                x = 0;
-                y++;
-            }
-        }
-        return ret;
     }
 
 }
