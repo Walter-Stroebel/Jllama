@@ -51,7 +51,7 @@ public class Embeddings {
 
     /**
      * Calculates the cosine similarity between the current object's embeddings
-     * and another's embeddings. Cosine similarity measures the cosine of the
+     * and an other's embeddings. Cosine similarity measures the cosine of the
      * angle between two non-zero vectors in a multidimensional space, providing
      * a metric of orientation similarity, regardless of magnitude. It ranges
      * from -1 (exactly opposite) to 1 (exactly the same), with 0 indicating
@@ -93,7 +93,7 @@ public class Embeddings {
 
     /**
      * Calculates the Euclidean distance between the current object's embeddings
-     * and another's embeddings. The Euclidean distance, or L2 distance, is the
+     * and an other's embeddings. The Euclidean distance, or L2 distance, is the
      * straight-line distance between two points in a multidimensional space,
      * computed as the square root of the sum of the squared differences between
      * corresponding elements of the two vectors. It measures the actual
