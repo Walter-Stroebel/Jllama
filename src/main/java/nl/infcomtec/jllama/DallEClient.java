@@ -11,6 +11,12 @@ import java.net.URL;
 import java.util.Base64;
 import nl.infcomtec.tools.ImageConverter;
 
+/**
+ * This class is an artifact, I needed a way to create images and as there was
+ * not a usable Ollama option at the time, I used OpenAI. Still, it works.
+ *
+ * @author walter
+ */
 public class DallEClient {
 
     private static final String ENDPOINT = "https://api.openai.com/v1/images/generations";
