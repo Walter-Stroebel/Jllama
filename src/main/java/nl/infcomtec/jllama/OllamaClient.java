@@ -15,26 +15,36 @@ import java.util.LinkedList;
 import java.util.TreeMap;
 import javax.imageio.ImageIO;
 
+/**
+ * The OllamaClient class is used to interact with the Ollama API. It provides
+ * methods to generate text responses, handle model sessions, and manage
+ * branches within a session.
+ */
 public class OllamaClient {
 
     private static final String GENERATE = "/api/generate";
     private final String API_GENERATE;
     private final String endPoint;
 
-    public void clear() {
-        sessions.clear();
-        newModel(curModel);
-    }
-
-    public class ModelSession {
-
-        public AvailableModels.AvailableModel model;
-        public LinkedList<ModelInteraction> context;
-    }
+    /**
+     * A TreeMap to store the model sessions, mapped by their names.
+     */
     public final TreeMap<String, ModelSession> sessions = new TreeMap<>();
+    /**
+     * A TreeMap to store the current branch for each model, mapped by model
+     * name.
+     */
     public final TreeMap<String, String> curBranch = new TreeMap<>();
+    /**
+     * The name of the currently active model.
+     */
     public String curModel = "";
 
+    /**
+     * Constructs an OllamaClient instance with the given endpoint.
+     *
+     * @param endPoint The endpoint for the Ollama API.
+     */
     public OllamaClient(String endPoint) {
         this.endPoint = endPoint;
         if (null != Ollama.config) {
@@ -45,6 +55,46 @@ public class OllamaClient {
             }
         }
         API_GENERATE = endPoint + GENERATE;
+    }
+
+    /**
+     * Clears all the sessions and creates a new session for the current model.
+     */
+    public void clear() {
+        sessions.clear();
+        newModel(curModel);
+    }
+
+    /**
+     * Sends a direct request to the Ollama API without streaming.
+     *
+     * @param rq The Request object containing the request details.
+     * @return The Response object containing the API response.
+     * @throws Exception If an error occurs during the request.
+     */
+    public Response direct(Request rq) throws Exception {
+        ObjectMapper mapper = Ollama.getMapper();
+        String requestBody = mapper.writeValueAsString(rq);
+        String response = sendRequest(requestBody);
+        return mapper.readValue(response, Response.class);
+    }
+
+    /**
+     * Sends a direct request to the Ollama API without streaming.
+     *
+     * @param modelName The name of the model to use.
+     * @param system The system prompt.
+     * @param prompt The user prompt.
+     * @return The Response object containing the API response.
+     * @throws Exception If an error occurs during the request.
+     */
+    public Response direct(String modelName, String system, String prompt) throws Exception {
+        Request rq = new Request();
+        rq.model = modelName;
+        rq.prompt = prompt;
+        rq.stream = false;
+        rq.system = system;
+        return direct(rq);
     }
 
     /**
@@ -89,6 +139,12 @@ public class OllamaClient {
         curModel = modelName;
     }
 
+    /**
+     * Get the ModelSession for the specified model name.
+     *
+     * @param modelName The name of the model.
+     * @return The ModelSession object, or null if not found.
+     */
     public ModelSession getSession(String modelName) {
         String branch = curBranch.get(modelName);
         if (null == branch) {
@@ -97,15 +153,32 @@ public class OllamaClient {
         return sessions.get(branch);
     }
 
+    /**
+     * Get the ModelSession for the current model.
+     *
+     * @return The ModelSession object for the current model.
+     */
     public ModelSession getSession() {
         return getSession(curModel);
     }
 
+    /**
+     * Get the list of ModelInteraction objects for the current model session.
+     *
+     * @return The LinkedList of ModelInteraction objects, or null if the
+     * session is not found.
+     */
     public LinkedList<ModelInteraction> getInter() {
         ModelSession get = getSession();
         return null != get ? get.context : null;
     }
 
+    /**
+     * Get the context (array of Integer) for the current model session.
+     *
+     * @return The array of Integer objects representing the context, or null if
+     * the session is not found or empty.
+     */
     public Integer[] getContext() {
         LinkedList<ModelInteraction> get = getInter();
         if (null != get && !get.isEmpty()) {
@@ -115,6 +188,12 @@ public class OllamaClient {
         return null;
     }
 
+    /**
+     * Add a response to the current model session.
+     *
+     * @param rq The Request object containing the request details.
+     * @param resp The Response object containing the response details.
+     */
     private void addResponse(Request rq, Response resp) {
         LinkedList<ModelInteraction> get = getInter();
         if (null == get) {
@@ -124,10 +203,28 @@ public class OllamaClient {
         get.add(new ModelInteraction(rq, resp));
     }
 
+    /**
+     * Send a prompt to the specified model and get the response.
+     *
+     * @param model The name of the model to use.
+     * @param prompt The user prompt.
+     * @return The Response object containing the API response.
+     * @throws Exception If an error occurs during the request.
+     */
     public Response askAndAnswer(String model, String prompt) throws Exception {
         return askAndAnswer(model, prompt, (RenderedImage[]) null);
     }
 
+    /**
+     * Send a prompt and images to the specified model and get the response.
+     *
+     * @param model The name of the model to use.
+     * @param prompt The user prompt.
+     * @param images The array of RenderedImage objects to include with the
+     * request.
+     * @return The Response object containing the API response.
+     * @throws Exception If an error occurs during the request.
+     */
     public Response askAndAnswer(String model, String prompt, RenderedImage... images) throws Exception {
         newModel(model);
         ObjectMapper mapper = Ollama.getMapper();
@@ -143,6 +240,14 @@ public class OllamaClient {
         return resp;
     }
 
+    /**
+     * Set the image data in the Request object.
+     *
+     * @param images The array of RenderedImage objects to include with the
+     * request.
+     * @param rq The Request object to modify.
+     * @throws IOException If an error occurs while encoding the image data.
+     */
     private void setReqImages(RenderedImage[] images, Request rq) throws IOException {
         if (null != images) {
             for (RenderedImage im : images) {
@@ -164,21 +269,33 @@ public class OllamaClient {
         }
     }
 
+    /**
+     * Send a prompt to the specified model and get the response, streaming the
+     * output.
+     *
+     * @param model The name of the model to use.
+     * @param prompt The user prompt.
+     * @param listener The StreamListener object to receive the streamed
+     * response.
+     * @return The Response object containing the API response.
+     * @throws Exception If an error occurs during the request.
+     */
     public Response askWithStream(String model, String prompt, StreamListener listener) throws Exception {
         return askWithStream(model, prompt, listener, (RenderedImage[]) null);
     }
 
     /**
-     * This calls the listener for each word.
+     * Send a prompt and images to the specified model and get the response,
+     * streaming the output.
      *
-     * @param model The model to use.
-     * @param prompt The question.
-     * @param listener Callback.
-     * @param images For vision capable models.
-     * @return Unlike the specification at
-     * https://github.com/jmorganca/ollama/blob/main/docs/api.md, this will also
-     * contain the full (concatenated) response in the response field.
-     * @throws Exception For reasons.
+     * @param model The name of the model to use.
+     * @param prompt The user prompt.
+     * @param listener The StreamListener object to receive the streamed
+     * response.
+     * @param images The array of RenderedImage objects to include with the
+     * request.
+     * @return The Response object containing the API response.
+     * @throws Exception If an error occurs during the request.
      */
     public Response askWithStream(String model, String prompt, StreamListener listener, RenderedImage... images) throws Exception {
         newModel(model);
@@ -199,6 +316,13 @@ public class OllamaClient {
         return resp;
     }
 
+    /**
+     * Send a request to the Ollama API and return the response as a String.
+     *
+     * @param requestBody The request body as a String.
+     * @return The response from the API as a String.
+     * @throws Exception If an error occurs during the request.
+     */
     private String sendRequest(String requestBody) throws Exception {
         URL url = new URL(API_GENERATE);
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
@@ -223,6 +347,16 @@ public class OllamaClient {
         }
     }
 
+    /**
+     * Send a request to the Ollama API and stream the response to a
+     * StreamListener.
+     *
+     * @param requestBody The request body as a String.
+     * @param listener The StreamListener object to receive the streamed
+     * response.
+     * @return The Response object containing the API response.
+     * @throws Exception If an error occurs during the request.
+     */
     private Response sendRequestWithStreaming(String requestBody, StreamListener listener) throws Exception {
         URL url = new URL(API_GENERATE);
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
@@ -277,6 +411,20 @@ public class OllamaClient {
         }
     }
 
+    /**
+     * The ModelSession class represents a session for a particular model. It
+     * contains the model information and the context (history) of interactions.
+     */
+    public class ModelSession {
+
+        public AvailableModels.AvailableModel model;
+        public LinkedList<ModelInteraction> context;
+    }
+
+    /**
+     * The StreamListener interface defines a callback method for receiving
+     * streamed responses.
+     */
     public interface StreamListener {
 
         /**
