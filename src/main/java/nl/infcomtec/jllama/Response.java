@@ -10,55 +10,64 @@ import java.util.List;
 public class Response extends StreamedResponse {
 
     /**
-     * an encoding of the conversation used in this response, this can be sent
-     * in the next request to keep a conversational memory
+     * An encoding of the conversation used in this response, this can be sent
+     * in the next request to keep a conversational memory.
      */
     public List<Integer> context;
+
     /**
-     * time spent generating the response
+     * Time spent generating the response in nanoseconds.
      */
     @JsonProperty(value = "total_duration")
     public long totalDuration;
+
     /**
-     * time spent in nanoseconds loading the model
+     * Time spent in nanoseconds loading the model.
      */
     @JsonProperty(value = "load_duration")
     public long loadDuration;
+
     /**
-     * number of samples generated
+     * Number of samples generated.
      */
     @JsonProperty(value = "sample_count")
     public int sampleCount;
+
     /**
-     * time spent generating samples
+     * Time spent generating samples in nanoseconds.
      */
     @JsonProperty(value = "sample_duration")
     public long sampleDuration;
+
     /**
-     * number of tokens in the prompt
+     * Number of tokens in the prompt.
      */
     @JsonProperty(value = "prompt_eval_count")
     public int promptEvalCount;
+
     /**
-     * time spent in nanoseconds evaluating the prompt
+     * Time spent in nanoseconds evaluating the prompt.
      */
     @JsonProperty(value = "prompt_eval_duration")
     public long promptEvalDuration;
+
     /**
-     * number of tokens in the response
+     * Number of tokens in the response.
      */
     @JsonProperty(value = "eval_count")
     public int evalCount;
+
     /**
-     * time in nanoseconds spent generating the response
+     * Time in nanoseconds spent generating the response.
      */
     @JsonProperty(value = "eval_duration")
     public long evalDuration;
 
     /**
-     * how fast the response is generated in tokens per second (token/s)
+     * Calculates how fast the response is generated in tokens per second
+     * (token/s).
      *
-     * @return tokens/s
+     * @return Tokens per second.
      */
     public double tokensPerSecond() {
         return 1E9 * evalCount / evalDuration;
@@ -84,5 +93,4 @@ public class Response extends StreamedResponse {
         sb.append('}');
         return sb.toString();
     }
-
 }
