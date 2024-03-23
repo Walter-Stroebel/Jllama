@@ -36,29 +36,69 @@ import javax.swing.UIManager;
  */
 public class Ollama {
 
+    /**
+     * The user's home directory.
+     */
     public static final File HOME_DIR = new File(System.getProperty("user.home"));
+
+    /**
+     * The working directory for storing Ollama data.
+     */
     public static final File WORK_DIR = new File(HOME_DIR, ".ollama.data");
+
+    /**
+     * The local endpoint for the Ollama server.
+     */
     private static final String LOCAL_ENDPOINT = "http://localhost:11434";
+
+    /**
+     * A DateTimeFormatter for formatting and parsing LocalDateTime objects.
+     */
     private static final DateTimeFormatter formatter = new DateTimeFormatterBuilder()
             .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
             .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
             .appendPattern("XXX")
             .toFormatter();
+
+    /**
+     * The configuration file for Ollama.
+     */
     public static final File configFile = new File(Ollama.WORK_DIR, "chatcfg.json");
+
+    /**
+     * The configuration object for Ollama.
+     */
     public static OllamaConfig config;
+
+    /**
+     * A map of available models and their metadata.
+     */
     private static TreeMap<String, AvailableModels> models;
+
+    /**
+     * The Vagrant instance for executing system commands.
+     */
     public static Vagrant vagrant;
+
+    /**
+     * The API endpoint for fetching tags (available models).
+     */
     public static final String TAGS = "/api/tags";
 
+    /**
+     * The main entry point of the application.
+     *
+     * @param args The command line arguments.
+     */
     public static void main(String[] args) {
         init();
         new OllamaChatFrame();
     }
 
     /**
-     * Set up Swing.
+     * Set up the Swing GUI.
      *
-     * @param fontSize in font points
+     * @param fontSize The font size in points.
      */
     public final static void setupGUI() {
         FlatDarkLaf.setup();
@@ -72,6 +112,9 @@ public class Ollama {
         }
     }
 
+    /**
+     * Initialize the Ollama application.
+     */
     public static void init() {
         if (!WORK_DIR.exists()) {
             WORK_DIR.mkdirs();
@@ -111,6 +154,15 @@ public class Ollama {
         }
     }
 
+    /**
+     * Find the start and end indices of a substring within a given string.
+     *
+     * @param text The input string.
+     * @param start The start marker.
+     * @param end The end marker.
+     * @return An array containing the start and end indices, or null if not
+     * found.
+     */
     private static int[] startsAndEndsWith(String text, String start, String end) {
         int startIndex = text.indexOf(start);
         if (startIndex < 0) {
@@ -161,6 +213,14 @@ public class Ollama {
         return ret;
     }
 
+    /**
+     * Handle the remaining text after extracting a special case.
+     *
+     * @param pool The service that will run the threads.
+     * @param ret The list of Modality instances to add to.
+     * @param currentText The original text.
+     * @param se The start and end indices of the extracted special case.
+     */
     private static void handleRest(ExecutorService pool, LinkedList<Modality> ret, String currentText, int[] se) {
         StringBuilder cat = new StringBuilder(currentText);
         cat.delete(se[0], se[1]);
@@ -187,7 +247,7 @@ public class Ollama {
     /**
      * Get the (cached) known models.
      *
-     * @return See Ollama API doc.
+     * @return A map of available models and their metadata.
      */
     public static TreeMap<String, AvailableModels> getAvailableModels() {
         if (null == models) {
@@ -199,7 +259,7 @@ public class Ollama {
     /**
      * Fetch the known models.
      *
-     * @return See Ollama API doc.
+     * @return A map of available models and their metadata.
      */
     public static TreeMap<String, AvailableModels> fetchAvailableModels() {
         TreeMap<String, AvailableModels> ret = new TreeMap<>();
@@ -212,6 +272,13 @@ public class Ollama {
         return models = ret;
     }
 
+    /**
+     * Fetch the available models from a given endpoint.
+     *
+     * @param endPoint The endpoint to fetch from.
+     * @return The available models metadata, or null if the endpoint is not
+     * responding.
+     */
     public static AvailableModels fetchAvailableModels(String endPoint) {
         try {
             URL url = new URL(endPoint + TAGS);
