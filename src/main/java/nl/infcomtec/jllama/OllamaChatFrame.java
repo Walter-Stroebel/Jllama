@@ -58,37 +58,120 @@ import nl.infcomtec.simpleimage.ImageViewer;
 import nl.infcomtec.tools.PandocConverter;
 
 /**
- * This is a FULL Ollama chat window. It allow to chat with any model available
- * at will.<p>
- * Note that this displays some extra information along with the actual chat
- * which allows one to get a good insight in how the model performs.</p>
+ * This is a FULL Ollama chat window. It allows you to chat with any available
+ * model.
+ * <p>
+ * Note that this displays some extra information along with the actual chat,
+ * which allows you to gain insight into how the model performs.
+ * </p>
  *
  * @author Walter Stroebel
  */
 public class OllamaChatFrame {
 
+    /**
+     * The main frame of the application.
+     */
     private final JFrame frame;
+
+    /**
+     * The toolbar containing buttons and other UI elements.
+     */
     private final JToolBar buttons;
+
+    /**
+     * The text area displaying the chat conversation.
+     */
     private final JTextArea chat;
+
+    /**
+     * The text area for user input.
+     */
     private final JTextArea input;
+
+    /**
+     * The client used for communicating with the Ollama service.
+     */
     private OllamaClient client;
+
+    /**
+     * The combo box for selecting the host.
+     */
     private final JComboBox<String> hosts;
+
+    /**
+     * The combo box for selecting the model.
+     */
     private final JComboBox<String> models;
+
+    /**
+     * A label displaying the current context size.
+     */
     private JLabel curCtxSize;
+
+    /**
+     * A label displaying the number of output tokens.
+     */
     private JLabel outTokens;
+
+    /**
+     * A label displaying the number of input tokens.
+     */
     private JLabel inTokens;
+
+    /**
+     * A flag indicating whether the application is in auto mode.
+     */
     private final AtomicBoolean autoMode = new AtomicBoolean(false);
+
+    /**
+     * An executor service for running background tasks.
+     */
     private final ExecutorService pool = Executors.newCachedThreadPool();
+
+    /**
+     * A label displaying the number of tokens per second.
+     */
     private JLabel tokensSec;
 
+    /**
+     * A label displaying the model family.
+     */
     private JLabel modFamily;
+
+    /**
+     * A label displaying the model families.
+     */
     private JLabel modFamilies;
+
+    /**
+     * A label displaying the model format.
+     */
     private JLabel modFormat;
+
+    /**
+     * A label displaying the model parameter size.
+     */
     private JLabel modParmSize;
+
+    /**
+     * A label displaying the model quantization level.
+     */
     private JLabel modQuant;
+
+    /**
+     * A label displaying the parent model.
+     */
     private JLabel modParMod;
+
+    /**
+     * A label displaying the previously uploaded image.
+     */
     private JLabel prevImage;
 
+    /**
+     * The previously uploaded image.
+     */
     private BufferedImage uplImage;
 
     /**
@@ -208,6 +291,10 @@ public class OllamaChatFrame {
         }
     }
 
+    /**
+     * Creates the toolbar buttons and initializes the hosts and models combo
+     * boxes.
+     */
     private void buttonBar() {
         buttons.add(new AbstractAction("Exit") {
             @Override
@@ -285,6 +372,11 @@ public class OllamaChatFrame {
         }));
     }
 
+    /**
+     * Adds a host to the hosts combo box if it doesn't already exist.
+     *
+     * @param host The host to add.
+     */
     private void addToHosts(String host) {
         for (int i = 0; i < hosts.getItemCount(); i++) {
             if (hosts.getItemAt(i).equalsIgnoreCase(host)) {
@@ -297,6 +389,12 @@ public class OllamaChatFrame {
         }
     }
 
+    /**
+     * Creates a panel containing various labels for displaying model
+     * information.
+     *
+     * @return The panel containing the model information labels.
+     */
     private JPanel sideBar() {
         JPanel ret = new JPanel();
         curCtxSize = new JLabel();
@@ -384,6 +482,11 @@ public class OllamaChatFrame {
         return ret;
     }
 
+    /**
+     * Updates the sidebar with information from the given response.
+     *
+     * @param resp The response object containing the information to display.
+     */
     private void updateSideBar(Response resp) {
         if (null != resp) {
             OllamaClient.ModelSession session = client.getSession();
@@ -410,6 +513,9 @@ public class OllamaChatFrame {
         }
     }
 
+    /**
+     * Called on the dispatch thread to show the frame.
+     */
     private void finishInit() {
         frame.setVisible(true);
         frame.setBounds(Ollama.config.x, Ollama.config.y, Ollama.config.w, Ollama.config.h);
@@ -426,8 +532,15 @@ public class OllamaChatFrame {
         });
     }
 
+    /**
+     * Action class for sending user input to the model and displaying the
+     * response.
+     */
     class Interact extends AbstractAction {
 
+        /**
+         * Constructor.
+         */
         public Interact() {
             super("Send");
         }
@@ -439,6 +552,13 @@ public class OllamaChatFrame {
             askModel("\n\n### Question\n\n", question);
         }
 
+        /**
+         * Asks the model the given question and displays the response in the
+         * chat area.
+         *
+         * @param source The source text to prepend to the question.
+         * @param question The question to ask the model.
+         */
         private void askModel(final String source, final String question) {
             if (!question.isEmpty()) {
                 chat.append(source + question);
@@ -513,6 +633,9 @@ public class OllamaChatFrame {
         }
     }
 
+    /**
+     * Listener for selecting a new host from the combo box.
+     */
     private class AddSelectHost implements ActionListener {
 
         public AddSelectHost() {
