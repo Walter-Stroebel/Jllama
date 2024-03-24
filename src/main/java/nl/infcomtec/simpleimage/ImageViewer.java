@@ -1,20 +1,13 @@
 package nl.infcomtec.simpleimage;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.FontMetrics;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.Point;
 import java.awt.event.ActionEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.LinkedList;
@@ -28,7 +21,6 @@ import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 /**
@@ -38,17 +30,17 @@ import javax.swing.UIManager;
  */
 public class ImageViewer {
 
-    private static final int MESSAGE_HEIGHT = 200;
-    private static final int MESSAGE_WIDTH = 800;
+    public static final int MESSAGE_HEIGHT = 200;
+    public static final int MESSAGE_WIDTH = 800;
     public List<Component> tools;
-    private String message = null;
-    private long messageMillis = 0;
-    private long shownLast = 0;
-    private Font messageFont = UIManager.getFont("Label.font");
+    public String message = null;
+    public long messageMillis = 0;
+    public long shownLast = 0;
+    public Font messageFont = UIManager.getFont("Label.font");
 
-    protected final ImageObject imgObj;
-    private LUT lut;
-    private List<Marker> marks;
+    public final ImageObject imgObj;
+    public LUT lut;
+    public List<Marker> marks;
 
     public ImageViewer(ImageObject imgObj) {
         this.imgObj = imgObj;
@@ -257,7 +249,7 @@ public class ImageViewer {
      * @return the JPanel.
      */
     public JPanel getScalePanPanel() {
-        final JPanel ret = new JPanelImpl();
+        final JPanel ret = new ImagePanel(this);
         return ret;
     }
 
@@ -270,7 +262,7 @@ public class ImageViewer {
     public JPanel getScalePanPanelTools() {
         final JPanel outer = new JPanel();
         outer.setLayout(new BorderLayout());
-        outer.add(new JPanelImpl(), BorderLayout.CENTER);
+        outer.add(new ImagePanel(this), BorderLayout.CENTER);
         if (null != tools) {
             JToolBar tb = new JToolBar();
             for (Component c : tools) {
@@ -291,7 +283,7 @@ public class ImageViewer {
         final JFrame ret = new JFrame();
         ret.setAlwaysOnTop(true);
         ret.getContentPane().setLayout(new BorderLayout());
-        ret.getContentPane().add(new JPanelImpl(), BorderLayout.CENTER);
+        ret.getContentPane().add(new ImagePanel(this), BorderLayout.CENTER);
         if (null != tools) {
             JToolBar tb = new JToolBar();
             for (Component c : tools) {
@@ -318,157 +310,4 @@ public class ImageViewer {
         SCALE_ORG, SCALE_MAX
     }
 
-    private class JPanelImpl extends JPanel {
-
-        int ofsX = 0;
-        int ofsY = 0;
-        double scale = 1;
-        private BufferedImage dispImage = null;
-
-        private Point pixelMouse(MouseEvent e) {
-            int ax = e.getX() - ofsX;
-            int ay = e.getY() - ofsY;
-            ax = (int) Math.round(ax / scale);
-            ay = (int) Math.round(ay / scale);
-            return new Point(ax, ay);
-        }
-
-        public JPanelImpl() {
-            MouseAdapter ma = new MouseAdapter() {
-                private int lastX, lastY;
-
-                @Override
-                public void mousePressed(MouseEvent e) {
-                    if (SwingUtilities.isRightMouseButton(e)) {
-                        imgObj.forwardMouse(ImageObject.MouseEvents.pressed_right, pixelMouse(e));
-                    } else {
-                        lastX = e.getX();
-                        lastY = e.getY();
-                    }
-                }
-
-                @Override
-                public void mouseReleased(MouseEvent e) {
-                    if (SwingUtilities.isRightMouseButton(e)) {
-                        imgObj.forwardMouse(ImageObject.MouseEvents.released_right, pixelMouse(e));
-                    } else {
-                        imgObj.forwardMouse(ImageObject.MouseEvents.released_left, pixelMouse(e));
-                    }
-                }
-
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    if (SwingUtilities.isRightMouseButton(e)) {
-                        imgObj.forwardMouse(ImageObject.MouseEvents.clicked_right, pixelMouse(e));
-                    } else {
-                        imgObj.forwardMouse(ImageObject.MouseEvents.clicked_left, pixelMouse(e));
-                    }
-                }
-
-                @Override
-                public void mouseDragged(MouseEvent e) {
-                    if (SwingUtilities.isRightMouseButton(e)) {
-                        imgObj.forwardMouse(ImageObject.MouseEvents.dragged, pixelMouse(e));
-                    } else {
-                        ofsX += e.getX() - lastX;
-                        ofsY += e.getY() - lastY;
-                        lastX = e.getX();
-                        lastY = e.getY();
-                        repaint(); // Repaint the panel to reflect the new position
-                    }
-                }
-
-                @Override
-                public void mouseWheelMoved(MouseWheelEvent e) {
-                    int notches = e.getWheelRotation();
-                    scale += notches * 0.1; // Adjust the scaling factor
-                    if (scale < 0.1) {
-                        scale = 0.1; // Prevent the scale from becoming too small
-                    }
-                    dispImage = null;
-                    repaint(); // Repaint the panel to reflect the new scale
-                }
-            };
-            addMouseListener(ma);
-            addMouseMotionListener(ma);
-            addMouseWheelListener(ma);
-            imgObj.addListener(new ImageObject.ImageObjectListener("Repaint") {
-                @Override
-                public void imageChanged(ImageObject imgObj, double resizeHint) {
-                    // If the image we are displaying is for instance 512 pixels and
-                    // the new image is 1536, we need to adjust scaling to match.
-                    scale *= resizeHint;
-                    dispImage = null;
-                    repaint(); // Repaint the panel to reflect any changes
-                }
-
-                @Override
-                public void signal(Object any) {
-                    if (any instanceof ScaleCommand) {
-                        ScaleCommand sc = (ScaleCommand) any;
-                        switch (sc) {
-                            case SCALE_MAX: {
-                                double w = (1.0 * getWidth()) / imgObj.getWidth();
-                                double h = (1.0 * getHeight()) / imgObj.getHeight();
-                                System.out.format("%f %f %d %d\n", w, h, imgObj.getWidth(), getWidth());
-                                if (w > h) {
-                                    scale = h;
-                                } else {
-                                    scale = w;
-                                }
-                            }
-                            break;
-                            case SCALE_ORG: {
-                                scale = 1;
-                            }
-                            break;
-                        }
-                        dispImage = null;
-                    }
-                    repaint();
-                }
-            });
-            Dimension dim = new Dimension(imgObj.getWidth(), imgObj.getHeight());
-            setPreferredSize(dim);
-        }
-
-        @Override
-        public void paint(Graphics g) {
-            g.setColor(Color.DARK_GRAY);
-            g.fillRect(0, 0, getWidth(), getHeight());
-            if (null == dispImage) {
-                int scaledWidth = (int) (imgObj.getWidth() * scale);
-                int scaledHeight = (int) (imgObj.getHeight() * scale);
-                dispImage = new BufferedImage(scaledWidth, scaledHeight, BufferedImage.TYPE_INT_ARGB);
-                Graphics2D g2 = dispImage.createGraphics();
-                g2.drawImage(imgObj.getScaledInstance(scaledWidth, scaledHeight, BufferedImage.SCALE_SMOOTH), 0, 0, null);
-                g2.dispose();
-                if (null != lut) {
-                    dispImage = lut.apply(dispImage);
-                }
-                if (null != marks) {
-                    for (Marker marker : marks) {
-                        marker.mark(dispImage);
-                    }
-                }
-            }
-            g.drawImage(dispImage, ofsX, ofsY, null);
-            if (null != message) {
-                if (0 == shownLast) {
-                    shownLast = System.currentTimeMillis();
-                }
-                if (shownLast + messageMillis >= System.currentTimeMillis()) {
-                    g.setFont(messageFont);
-                    g.setColor(Color.WHITE);
-                    g.setXORMode(Color.BLACK);
-                    int ofs = g.getFontMetrics().getHeight();
-                    System.out.println(message + " " + ofs);
-                    g.drawString(message, ofs, ofs * 2);
-                } else {
-                    message = null;
-                    shownLast = 0;
-                }
-            }
-        }
-    }
 }
