@@ -123,7 +123,7 @@ public class ImageViewer {
      * Often images have overly bright or dark areas. This permits to have a
      * lighter or darker view.
      *
-     * @return this for chaining.
+     * @return For chaining.
      */
     public synchronized ImageViewer addShadowView() {
         ButtonGroup bg = new ButtonGroup();
@@ -200,6 +200,12 @@ public class ImageViewer {
         return this;
     }
 
+    /**
+     * Add any button.
+     *
+     * @param action The action for the button to perform when clicked.
+     * @return For chaining.
+     */
     public synchronized ImageViewer addButton(Action action) {
         if (null == tools) {
             tools = new LinkedList<>();
@@ -208,6 +214,12 @@ public class ImageViewer {
         return this;
     }
 
+    /**
+     * Scale the image to the maximum size.
+     *
+     * @param dsp The text to display on the button.
+     * @return For chaining.
+     */
     public synchronized ImageViewer addMaxButton(String dsp) {
         if (null == tools) {
             tools = new LinkedList<>();
@@ -221,6 +233,12 @@ public class ImageViewer {
         return this;
     }
 
+    /**
+     * Scale the image to the original size.
+     *
+     * @param dsp The text to display on the button.
+     * @return For chaining.
+     */
     public synchronized ImageViewer addOrgButton(String dsp) {
         if (null == tools) {
             tools = new LinkedList<>();
@@ -234,6 +252,12 @@ public class ImageViewer {
         return this;
     }
 
+    /**
+     * Add any component to the bar.
+     *
+     * @param comp The component to add, for instance a progress bar.
+     * @return For chaining.
+     */
     public synchronized ImageViewer addAnything(Component comp) {
         if (null == tools) {
             tools = new LinkedList<>();
@@ -302,10 +326,18 @@ public class ImageViewer {
         return ret;
     }
 
+    /**
+     * Get the image object.
+     *
+     * @return The current ImageObject.
+     */
     public ImageObject getImageObject() {
         return imgObj;
     }
 
+    /**
+     * Scaling options.
+     */
     public enum ScaleCommand {
         SCALE_ORG, SCALE_MAX
     }

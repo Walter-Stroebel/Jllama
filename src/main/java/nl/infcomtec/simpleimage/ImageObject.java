@@ -26,6 +26,7 @@ public class ImageObject extends Image {
     private BufferedImage image;
     private final Semaphore lock = new Semaphore(0);
     private final List<ImageObjectListener> listeners = new LinkedList<>();
+    public boolean debug = false;
 
     public ImageObject(Image image) {
         putImage(image);
@@ -47,16 +48,30 @@ public class ImageObject extends Image {
         listeners.add(listener);
     }
 
-    void sendSignal(Object msg) {
+    /**
+     * Inform all listeners about an event(message).
+     *
+     * @param msg The event / message.
+     */
+    public void sendSignal(Object msg) {
         for (ImageObjectListener listener : listeners) {
             listener.signal(msg);
         }
     }
 
+    /**
+     * Mouse Events
+     */
     public enum MouseEvents {
         clicked_left, clicked_right, dragged, moved, pressed_left, released_left, pressed_right, released_right
     };
 
+    /**
+     * Inform all listeners about a mouse event.
+     *
+     * @param ev The mouse event.
+     * @param p Point the event happened.
+     */
     public synchronized void forwardMouse(MouseEvents ev, Point2D p) {
         for (ImageObjectListener listener : listeners) {
             listener.mouseEvent(this, ev, p);
@@ -86,6 +101,11 @@ public class ImageObject extends Image {
         }
     }
 
+    /**
+     * Get the width of the current image.
+     *
+     * @return The width.
+     */
     public int getWidth() {
         return getWidth(null);
     }
@@ -100,6 +120,11 @@ public class ImageObject extends Image {
         return image.getHeight(io);
     }
 
+    /**
+     * Get the height of the current image.
+     *
+     * @return The width.
+     */
     public int getHeight() {
         return getHeight(null);
     }
@@ -119,6 +144,16 @@ public class ImageObject extends Image {
         return image.getProperty(string, null);
     }
 
+    /**
+     * This creates a map of areas around a point of interest.
+     *
+     * The idea is that if something happens for a given point on the image
+     * (like a mouse click), this map can associate an identifier (a simple
+     * string) to that event.
+     *
+     * @param pois Points of interest.
+     * @return The map.
+     */
     public HashMap<String, BitShape> calculateClosestAreas(final Map<String, Point2D> pois) {
         long nanos = System.nanoTime();
         final HashMap<String, BitShape> ret = new HashMap<>();
@@ -166,8 +201,10 @@ public class ImageObject extends Image {
         } catch (InterruptedException ex) {
             throw new RuntimeException("We are asked to stop?", ex);
         }
-        System.out.format("calculateClosestAreas W=%d,H=%d,P=%d,T=%.2f ms\n",
-                getWidth(), getHeight(), pois.size(), (System.nanoTime() - nanos) / 1e6);
+        if (debug) {
+            System.out.format("calculateClosestAreas W=%d,H=%d,P=%d,T=%.2f ms\n",
+                    getWidth(), getHeight(), pois.size(), (System.nanoTime() - nanos) / 1e6);
+        }
         return ret;
     }
 
