@@ -241,6 +241,33 @@ public class OllamaClient {
     }
 
     /**
+     * Send a prompt to the specified model and get the only the answer.
+     *
+     * <ul>
+     * <li>This call does not <b>change</b> the current context of the model.
+     * <li>It is an <b>error</b> to use this call without any current context.
+     * </ul>
+     *
+     * @param prompt The user prompt.
+     * @return The answer of the model.
+     * @throws Exception If an error occurs during the request.
+     */
+    public String execute(String prompt) throws Exception {
+        ObjectMapper mapper = Ollama.getMapper();
+        Request rq = new Request();
+        rq.model = curModel;
+        rq.prompt = prompt;
+        rq.context = getContext();
+        if (rq.model.isEmpty() || null == rq.context || 0 == rq.context.length) {
+            throw new Exception("Nothing to execute on.");
+        }
+        String requestBody = mapper.writeValueAsString(rq);
+        String response = sendRequest(requestBody);
+        Response resp = mapper.readValue(response, Response.class);
+        return resp.response;
+    }
+
+    /**
      * Set the image data in the Request object.
      *
      * @param images The array of RenderedImage objects to include with the
