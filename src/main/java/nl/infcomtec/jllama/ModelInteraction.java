@@ -14,4 +14,9 @@ public class ModelInteraction {
         this.request = request;
         this.response = response;
     }
+
+    @Override
+    public String toString() {
+        return "ModelInteraction{" + "request=" + request + ", response=" + response + '}';
+    }
 }

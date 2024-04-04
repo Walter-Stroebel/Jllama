@@ -105,7 +105,7 @@ public class OllamaChatFrame {
     private final JComboBox<String> models;
 
     /**
-     * A label displaying the current context size.
+     * A label displaying the current interactions size.
      */
     private JLabel curCtxSize;
 
@@ -370,6 +370,19 @@ public class OllamaChatFrame {
                 autoMode.set(((JCheckBox) ae.getSource()).isSelected());
             }
         }));
+        buttons.add(new JCheckBox(new AbstractAction("Debug") {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                client.setDebug(((JCheckBox) ae.getSource()).isSelected());
+            }
+        }));
+        buttons.add(new JToolBar.Separator());
+        buttons.add(new JButton(new AbstractAction("Knowledge") {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                KnowledgeBaseSystem.createAndShowKBFrame(frame, client);
+            }
+        }));
     }
 
     /**
@@ -585,7 +598,7 @@ public class OllamaChatFrame {
                                 if (!mods.isEmpty()) {
                                     for (Modality mod : mods) {
                                         if (mod.isGraphical) {
-                                            new TextImage(pool, mod.getClass().getSimpleName(), mod);
+                                            new ModalityImage(pool, mod.getClass().getSimpleName(), mod);
                                         } else {
                                             System.out.println(mod.getText());
                                             if (null != mod.getText()) {

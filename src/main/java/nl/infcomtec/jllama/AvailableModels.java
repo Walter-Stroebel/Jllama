@@ -32,6 +32,20 @@ public class AvailableModels {
         public long size;
         public String digest;
         public Details details;
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("AvailableModel{");
+            sb.append("name=").append(name);
+            sb.append(", model=").append(model);
+            sb.append(", modifiedAt=").append(modifiedAt);
+            sb.append(", size=").append(size);
+            sb.append(", digest=").append(digest);
+            sb.append(", details=").append(details);
+            sb.append('}');
+            return sb.toString();
+        }
     }
     public AvailableModel[] models;
 

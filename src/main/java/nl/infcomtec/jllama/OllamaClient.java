@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.awt.image.RenderedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -13,28 +15,25 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.LinkedList;
 import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 
 /**
  * The OllamaClient class is used to interact with the Ollama API. It provides
- * methods to generate text responses, handle model sessions, and manage
- * branches within a session.
+ * methods to generate text responses and handle model sessions.
  */
 public class OllamaClient {
 
     private static final String GENERATE = "/api/generate";
     private final String API_GENERATE;
     private final String endPoint;
+    private File debugFile = null;
 
     /**
      * A TreeMap to store the model sessions, mapped by their names.
      */
     public final TreeMap<String, ModelSession> sessions = new TreeMap<>();
-    /**
-     * A TreeMap to store the current branch for each model, mapped by model
-     * name.
-     */
-    public final TreeMap<String, String> curBranch = new TreeMap<>();
     /**
      * The name of the currently active model.
      */
@@ -55,6 +54,24 @@ public class OllamaClient {
             }
         }
         API_GENERATE = endPoint + GENERATE;
+    }
+
+    /**
+     * Enable or disable debug tracing.
+     *
+     * @param on True is on, false is off.
+     */
+    public void setDebug(boolean on) {
+        if (on) {
+            if (null == debugFile)
+            try {
+                debugFile = File.createTempFile("ollama", ".debug");
+            } catch (IOException ex) {
+                Logger.getLogger(OllamaClient.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else {
+            debugFile = null;
+        }
     }
 
     /**
@@ -98,22 +115,6 @@ public class OllamaClient {
     }
 
     /**
-     * Add a branch from the current one.
-     *
-     * @param branchName Name of the branch to add.
-     * @return null or the old contents of the branchName if it was not new.
-     * @throws NullPointerException if you try to branch from nothing.
-     */
-    public ModelSession newBranch(String branchName) {
-        ModelSession nbr = new ModelSession();
-        ModelSession obr = getSession();
-        nbr.context = new LinkedList<>(obr.context);
-        nbr.model = obr.model;
-        curBranch.put(nbr.model.name, branchName);
-        return sessions.put(branchName, nbr);
-    }
-
-    /**
      * Start a new tree if the model has no tree.
      *
      * @param modelName Name of the model we will query.
@@ -126,16 +127,17 @@ public class OllamaClient {
                 Ollama.config.update();
             }
         }
-        session = new ModelSession();
-        AvailableModels mods = Ollama.getAvailableModels().get(endPoint);
-        for (AvailableModels.AvailableModel am : mods.models) {
-            if (am.name.equals(modelName)) {
-                session.model = am;
-                break;
+        if (null == session) {
+            session = new ModelSession();
+            AvailableModels mods = Ollama.getAvailableModels().get(endPoint);
+            for (AvailableModels.AvailableModel am : mods.models) {
+                if (am.name.equals(modelName)) {
+                    session.model = am;
+                    break;
+                }
             }
+            sessions.put(modelName, session);
         }
-        curBranch.put(modelName, modelName);
-        sessions.put(modelName, session);
         curModel = modelName;
     }
 
@@ -146,11 +148,7 @@ public class OllamaClient {
      * @return The ModelSession object, or null if not found.
      */
     public ModelSession getSession(String modelName) {
-        String branch = curBranch.get(modelName);
-        if (null == branch) {
-            return null;
-        }
-        return sessions.get(branch);
+        return sessions.get(modelName);
     }
 
     /**
@@ -170,14 +168,14 @@ public class OllamaClient {
      */
     public LinkedList<ModelInteraction> getInter() {
         ModelSession get = getSession();
-        return null != get ? get.context : null;
+        return (null != get) ? get.interactions : null;
     }
 
     /**
-     * Get the context (array of Integer) for the current model session.
+     * Get the interactions (array of Integer) for the current model session.
      *
-     * @return The array of Integer objects representing the context, or null if
-     * the session is not found or empty.
+     * @return The array of Integer objects representing the interactions, or
+     * null if the session is not found or empty.
      */
     public Integer[] getContext() {
         LinkedList<ModelInteraction> get = getInter();
@@ -198,7 +196,7 @@ public class OllamaClient {
         LinkedList<ModelInteraction> get = getInter();
         if (null == get) {
             get = new LinkedList<>();
-            getSession().context = get;
+            getSession().interactions = get;
         }
         get.add(new ModelInteraction(rq, resp));
     }
@@ -232,6 +230,11 @@ public class OllamaClient {
         rq.model = model;
         rq.prompt = prompt;
         rq.context = getContext();
+        if (null != debugFile) {
+            try (FileWriter writer = new FileWriter(debugFile, true)) {
+                writer.write(mapper.writeValueAsString(rq));
+            }
+        }
         setReqImages(images, rq);
         String requestBody = mapper.writeValueAsString(rq);
         String response = sendRequest(requestBody);
@@ -241,11 +244,23 @@ public class OllamaClient {
     }
 
     /**
+     * Check if a dialog is in progress.
+     *
+     * @return true if a dialog is in progress (needed to call execute).
+     */
+    public boolean hasDialog() {
+        Integer[] ctx = getContext();
+        return !curModel.isEmpty() && null != ctx && 0 != ctx.length;
+    }
+
+    /**
      * Send a prompt to the specified model and get the only the answer.
      *
      * <ul>
-     * <li>This call does not <b>change</b> the current context of the model.
-     * <li>It is an <b>error</b> to use this call without any current context.
+     * <li>This call does not <b>change</b> the current interactions of the
+     * model.
+     * <li>It is an <b>error</b> to use this call without any current
+     * interactions.
      * </ul>
      *
      * @param prompt The user prompt.
@@ -351,6 +366,12 @@ public class OllamaClient {
      * @throws Exception If an error occurs during the request.
      */
     private String sendRequest(String requestBody) throws Exception {
+        if (null != debugFile) {
+            try (FileWriter writer = new FileWriter(debugFile, true)) {
+                writer.write("\nrequestBody:\n");
+                writer.write(requestBody);
+            }
+        }
         URL url = new URL(API_GENERATE);
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("POST");
@@ -367,6 +388,12 @@ public class OllamaClient {
             String responseLine;
             while ((responseLine = br.readLine()) != null) {
                 response.append(responseLine.trim());
+            }
+            if (null != debugFile) {
+                try (FileWriter writer = new FileWriter(debugFile, true)) {
+                    writer.write("\nresponse:\n");
+                    writer.write(response.toString());
+                }
             }
             return response.toString();
         } finally {
@@ -385,6 +412,12 @@ public class OllamaClient {
      * @throws Exception If an error occurs during the request.
      */
     private Response sendRequestWithStreaming(String requestBody, StreamListener listener) throws Exception {
+        if (null != debugFile) {
+            try (FileWriter writer = new FileWriter(debugFile, true)) {
+                writer.write("\nrequestBody:\n");
+                writer.write(requestBody);
+            }
+        }
         URL url = new URL(API_GENERATE);
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("POST");
@@ -403,6 +436,12 @@ public class OllamaClient {
             while ((responseLine = br.readLine()) != null) {
                 if (!responseLine.trim().isEmpty()) {
                     if (responseLine.startsWith("{\"error")) {
+                        if (null != debugFile) {
+                            try (FileWriter writer = new FileWriter(debugFile, true)) {
+                                writer.write("\nError:\n");
+                                writer.write(responseLine);
+                            }
+                        }
                         Response err = new Response();
                         err.context = new LinkedList<>();
                         err.createdAt = LocalDateTime.now();
@@ -422,6 +461,12 @@ public class OllamaClient {
                     }
                     Response val = mapper.readValue(responseLine, Response.class);
                     if (val.done) {
+                        if (null != debugFile) {
+                            try (FileWriter writer = new FileWriter(debugFile, true)) {
+                                writer.write("\nfullResponse:\n");
+                                writer.write(fullResponse.toString());
+                            }
+                        }
                         val.response = fullResponse.toString();
                         return val;
                     } else {
@@ -445,7 +490,12 @@ public class OllamaClient {
     public class ModelSession {
 
         public AvailableModels.AvailableModel model;
-        public LinkedList<ModelInteraction> context;
+        public LinkedList<ModelInteraction> interactions;
+
+        @Override
+        public String toString() {
+            return "ModelSession{" + "model=" + model + ", interactions=" + interactions + '}';
+        }
     }
 
     /**

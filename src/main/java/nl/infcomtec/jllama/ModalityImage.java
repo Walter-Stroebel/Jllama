@@ -18,13 +18,13 @@ import nl.infcomtec.simpleimage.ImageViewer;
  *
  * @author walter
  */
-public class TextImage {
+public class ModalityImage {
 
     public final JFrame frame;
     public final ImageObject imgObj;
     private final Modality worker;
 
-    public TextImage(final ExecutorService pool, String title, Modality grpMod) throws Exception {
+    public ModalityImage(final ExecutorService pool, String title, Modality grpMod) throws Exception {
         worker = grpMod;
         frame = new JFrame(title);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);

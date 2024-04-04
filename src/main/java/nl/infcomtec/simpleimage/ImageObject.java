@@ -85,7 +85,7 @@ public class ImageObject extends Image {
      * replace image with replImage. All listeners will be notified.
      */
     public synchronized final void putImage(Image replImage) {
-        int oldWid = null == this.image ? 0 : this.image.getWidth();
+        int oldWid = (null == this.image) ? 0 : this.image.getWidth();
         if (null != replImage) {
             this.image = new BufferedImage(replImage.getWidth(null), replImage.getHeight(null), BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2 = this.image.createGraphics();
