@@ -293,8 +293,9 @@ public class Ollama {
                 }
                 return getMapper().readValue(response.toString(), AvailableModels.class);
             } catch (Exception any) {
-                System.out.println("Endpoint " + url + " is not responding.");
-                System.out.println("Error: " + any.getMessage());
+                //TODO, ignore for now, most likely ollama is not running
+                //System.out.println("Endpoint " + url + " is not responding.");
+                //System.out.println("Error: " + any.getMessage());
             } finally {
                 con.disconnect();
             }
