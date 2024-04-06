@@ -1,0 +1,29 @@
+{
+    "passage": {
+        "title": "The Lost Compass",
+        "story": "In the heart of the ancient forest, young Alex stumbled upon a hidden glade, where the light danced through the canopy above, casting shimmering patterns on the ground. Intrigued by the beauty, Alex noticed something partly buried under a thick layer of fallen leaves. It was an old, brass compass, its glass cracked but the needle steady. Remembering tales of adventurers and explorers, Alex decided to follow the direction pointed by the compass. Through thicket and stream, the compass led Alex to a clearing, where an old, forgotten tower stood, cloaked in ivy. Inside, the air was thick with dust, and the only sound was the whisper of turning pages from an open book on a pedestal. The book, ancient and bound in leather, told of the forest's history and the tower's purpose as a beacon for those who were lost. Realizing the compass's value and the tower's significance, Alex decided to restore the tower and make it a point of guidance for future adventurers. With determination, Alex worked day by day, clearing, cleaning, and learning the ways of the forest. Eventually, the tower stood proud once again, a beacon of hope and adventure, just as it was intended to be."
+    },
+    "questions": [
+        {
+            "text": "What did Alex find in the ancient forest?",
+            "answer": "An old, brass compass."
+        },
+        {
+            "text": "What did the compass lead Alex to?",
+            "answer": "A clearing where an old, forgotten tower stood."
+        },
+        {
+            "text": "What was the tower's purpose according to the ancient book?",
+            "answer": "A beacon for those who were lost."
+        },
+        {
+            "text": "What decision did Alex make upon discovering the tower's significance?",
+            "answer": "To restore the tower and make it a point of guidance for future adventurers."
+        },
+        {
+            "text": "How did Alex contribute to the tower?",
+            "answer": "By working to clear, clean, and learn the ways of the forest, eventually restoring the tower."
+        }
+    ]
+}
+

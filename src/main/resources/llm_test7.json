@@ -1,0 +1,29 @@
+{
+    "passage": {
+        "title": "The Secret of the Coded Message",
+        "story": "During a history lesson about ancient civilizations, Mrs. Grant challenged her students with a unique puzzle. She handed out a replica of a stone tablet found in the ruins of an ancient library. The tablet was inscribed with a series of symbols that resembled no known language. The class was divided into groups, each tasked with deciphering the message. Mrs. Grant hinted that understanding the context of the civilization's culture, technology, and geographical location was key to unlocking the message. After days of research and collaboration, one group discovered that the symbols represented not words, but numbers. By applying mathematical principles known to have been used by the civilization, such as their unique base counting system and geometric patterns for numeric representation, the students decoded the message. It was a formula for calculating the optimal planting season based on lunar cycles, a crucial piece of knowledge for the civilization's agriculture. This exercise taught the students the importance of interdisciplinary study, combining history, linguistics, and mathematics to solve complex problems."
+    },
+    "questions": [
+        {
+            "text": "What was the unique challenge Mrs. Grant presented to her students?",
+            "answer": "Deciphering a coded message inscribed on a replica of an ancient stone tablet."
+        },
+        {
+            "text": "What key hint did Mrs. Grant provide to solve the puzzle?",
+            "answer": "Understanding the context of the civilization's culture, technology, and geographical location."
+        },
+        {
+            "text": "How did the students finally decode the message?",
+            "answer": "By discovering the symbols represented numbers and applying the civilization's mathematical principles."
+        },
+        {
+            "text": "What did the decoded message reveal?",
+            "answer": "A formula for calculating the optimal planting season based on lunar cycles."
+        },
+        {
+            "text": "What lesson did the students learn from this exercise?",
+            "answer": "The importance of interdisciplinary study in solving complex problems."
+        }
+    ]
+}
+

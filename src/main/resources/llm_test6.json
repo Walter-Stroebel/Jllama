@@ -1,0 +1,29 @@
+{
+    "passage": {
+        "title": "The Water Cycle Journey",
+        "story": "Eva, a curious third grader, was fascinated by how rain is formed. Her science teacher, Mr. Thompson, explained the water cycle using a colorful diagram. The journey begins with the Sun heating water in rivers, lakes, and oceans, causing it to evaporate into the air as vapor. Plants also contribute through a process called transpiration, releasing water vapor from their leaves. This water vapor rises up into the sky and cools down, forming clouds in a process called condensation. When the clouds get heavy enough, the water falls back to Earth as precipitation, which can be rain, snow, or hail, depending on the temperature. Eva learned that some of the rainwater is absorbed by the ground, replenishing underground aquifers in a process known as infiltration, while the rest flows back into rivers and lakes, ready to start the cycle over again. Mr. Thompson emphasized the importance of the water cycle in maintaining life on Earth, as it distributes water all around the planet."
+    },
+    "questions": [
+        {
+            "text": "What causes water to evaporate into the air?",
+            "answer": "The Sun heating water in rivers, lakes, and oceans."
+        },
+        {
+            "text": "What process allows plants to release water vapor?",
+            "answer": "Transpiration."
+        },
+        {
+            "text": "What is the process called when water vapor forms clouds?",
+            "answer": "Condensation."
+        },
+        {
+            "text": "What are the different forms of precipitation mentioned?",
+            "answer": "Rain, snow, or hail."
+        },
+        {
+            "text": "What happens to rainwater after it falls to Earth?",
+            "answer": "It is absorbed by the ground in a process called infiltration or flows back into rivers and lakes."
+        }
+    ]
+}
+

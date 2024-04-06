@@ -383,6 +383,16 @@ public class OllamaChatFrame {
                 KnowledgeBaseSystem.createAndShowKBFrame(frame, client);
             }
         }));
+        buttons.add(new JButton(new AbstractAction("Model test") {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                ModelTester modelTester = new ModelTester();
+                modelTester.run();
+                chat.setText(modelTester.eval);
+                chat.append(System.lineSeparator());
+                chat.append(modelTester.fullTest.toString());
+            }
+        }));
     }
 
     /**

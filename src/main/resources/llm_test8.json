@@ -1,0 +1,29 @@
+{
+    "passage": {
+        "title": "The Mystery of the Vanishing Lake",
+        "story": "In the small town of Greenwood, nestled among rolling hills, there was a lake that mysteriously vanished every summer, only to reappear each autumn. The townspeople, puzzled by this phenomenon, turned to local scientists for an explanation. Dr. Elena, a geologist, and Dr. Marcus, a hydrologist, teamed up to solve the mystery. They drove around in a Land Rover, the driver was called Fred Goodfellow. They hypothesized that the lake was fed by underground springs that were affected by seasonal temperature changes. In winter, the springs would fill the lake with water, but in summer, increased temperatures caused the water to evaporate more quickly than it was replenished. Additionally, they believed that a subterranean channel, which opened due to the geological shifts in summer, allowed water to drain from the lake, further contributing to its disappearance. To test their hypothesis, they conducted a series of experiments and measurements throughout the year, monitoring water levels, temperature fluctuations, and geological changes. Their findings confirmed that the combination of increased evaporation and the opening of the subterranean channel in summer were responsible for the lake's seasonal vanishing act. The townspeople were relieved to have an explanation, and the lake was thereafter known as 'Mystery Lake,' a peculiar but beloved landmark of Greenwood."
+    },
+    "questions": [
+        {
+            "text": "Why did the lake in Greenwood vanish every summer?",
+            "answer": "Due to increased evaporation and the opening of a subterranean channel that drained the lake."
+        },
+        {
+            "text": "Who were the scientists investigating the mystery of the vanishing lake?",
+            "answer": "Dr. Elena, a geologist, and Dr. Marcus, a hydrologist."
+        },
+        {
+            "text": "What was the initial hypothesis about the lake's disappearance?",
+            "answer": "The hypothesis was that the lake was fed by underground springs affected by seasonal temperature changes and a subterranean channel that allowed water to drain from the lake in summer."
+        },
+        {
+            "text": "How did the scientists confirm their hypothesis about the lake?",
+            "answer": "By conducting experiments and measurements throughout the year, monitoring water levels, temperature fluctuations, and geological changes."
+        },
+        {
+            "text": "What new name was given to the lake after the mystery was solved?",
+            "answer": "Mystery Lake."
+        }
+    ]
+}
+

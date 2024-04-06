@@ -1,0 +1,29 @@
+{
+    "passage": {
+        "title": "The Secret of the Old Clock",
+        "story": "In the small town of Greenlake, there was an old clock that stood at the town square. It was known for its beautiful chimes that rang every hour. Legend had it that the clock held a secret compartment containing a treasure map. Many had tried to find it, but the compartment remained a mystery. One day, a curious young girl named Ellie, who loved puzzles, decided to solve the mystery of the old clock. She spent days observing the clock, taking notes, and reading about its history. She discovered that the clockmaker was a renowned inventor and a puzzle enthusiast. Ellie noticed that the clock chimes played a different melody at noon. She recalled reading that the clockmaker enjoyed incorporating puzzles into his inventions. With this clue, Ellie deduced that the melody might be a code to unlocking the compartment. Armed with her violin, Ellie played the melody backward in front of the clock. To everyone's surprise, a small compartment opened, revealing an old, dusty map leading to a hidden corner of the town park."
+    },
+    "questions": [
+        {
+            "text": "What is the legend associated with the old clock?",
+            "answer": "It held a secret compartment with a treasure map."
+        },
+        {
+            "text": "What made Ellie decide to investigate the old clock?",
+            "answer": "She loved puzzles and mysteries."
+        },
+        {
+            "text": "How did Ellie solve the mystery of the clock?",
+            "answer": "By playing the clock's noon melody backward."
+        },
+        {
+            "text": "What did Ellie find inside the compartment?",
+            "answer": "A dusty old map."
+        },
+        {
+            "text": "What does the story suggest about Ellie?",
+            "answer": "She is brave and adventurous."
+        }
+    ]
+}
+

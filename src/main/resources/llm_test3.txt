@@ -1,0 +1,13 @@
+Two sentences are followed by a question or statement about them. Read each pair of sentences and then choose the best answer to the question or the best completion of the statement.
+
+The Midwest is experiencing its worst drought in fifteen years.
+
+Corn and soybean prices are expected to be very high this year.
+
+What does the second sentence do?
+
+A. It restates the idea found in the first.
+B. It states an effect.
+C. It gives an example.
+D. It analyzes the statement made in the first.
+::B

@@ -1,0 +1,32 @@
+{
+    "passage": {
+        "title": "The Whispering Woods",
+        "story": "In the heart of the Valley of Echoes, stood the Whispering Woods, a forest known for its peculiar trait: the trees could whisper secrets of the past. Many adventurers and scholars visited the woods hoping to uncover ancient knowledge. Among them was a young historian named Alex, who was deeply intrigued by the legend of an ancient civilization rumored to have thrived in the valley. According to the legend, this civilization had hidden the key to a vast library within the woods before vanishing. Alex, armed with a recorder to capture the whispers and extensive research notes, ventured into the forest. For days, Alex listened to the whispers, but they were mostly incomprehensible or trivial secrets. However, Alex didn't give up and one day, stumbled upon a clearing where the whispers seemed louder and more coherent. By piecing together the whispers, Alex discovered they formed a riddle that, when solved, revealed the location of the hidden key under a stone in the clearing. Excitedly, Alex lifted the stone, finding not only the key but also a cryptic map leading to the library, hidden beneath the valley floor."
+    },
+    "questions": [
+        {
+            "text": "What is unique about the Whispering Woods?",
+            "answer": "The trees can whisper secrets of the past."
+        },
+        {
+            "text": "Why did Alex visit the Whispering Woods?",
+            "answer": "To find the key to the ancient civilization's library."
+        },
+        {
+            "text": "How did Alex find the key?",
+            "answer": "By solving a riddle from the whispers in a clearing."
+        },
+        {
+            "text": "What did Alex find under the stone?",
+            "answer": "A key and a cryptic map to the library."
+        },
+        {
+            "text": "Based on the story, what can be inferred about the civilization?",
+            "answer": "It valued knowledge, as evidenced by the hidden library."
+        },
+        {
+            "text": "What might mislead an unattentive reader about Alex's discovery?",
+            "answer": "Thinking Alex found the library itself, not the key and map to it."
+        }
+    ]
+}
