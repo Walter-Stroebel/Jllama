@@ -17,6 +17,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +85,75 @@ public class Ollama {
      * The API endpoint for fetching tags (available models).
      */
     public static final String TAGS = "/api/tags";
+    /**
+     * Monitoring hooks.
+     */
+    private static final LinkedList<Monitor> monitors = new LinkedList<>();
+
+    /**
+     * Register a monitor.
+     *
+     * @param monitor Callback to register.
+     */
+    public static void registerMonitor(Monitor monitor) {
+        synchronized (monitors) {
+            monitors.add(monitor);
+        }
+    }
+
+    /**
+     * Register a monitor.
+     *
+     * @param name The name of a previously registered monitor. Any registered
+     * monitor with that exact name will be de-registered.
+     */
+    public static void deregisterMonitor(String name) {
+        synchronized (monitors) {
+            for (Iterator<Monitor> it = monitors.iterator(); it.hasNext();) {
+                Monitor mon = it.next();
+                if (mon.getName().equals(name)) {
+                    try {
+                        mon.close();
+                    } catch (Exception any) {
+                        // just ignore
+                    }
+                    it.remove();
+                }
+            }
+        }
+    }
+
+    /**
+     * Will call any registered monitors from a synchronized context.
+     *
+     * @param req If true the data should be an API request, else an API
+     * response.
+     * @param data Either a request or a response.
+     */
+    public static void doMonitoring(boolean req, String data) {
+        synchronized (monitors) {
+            for (Monitor mon : monitors) {
+                if (req) {
+                    mon.requested(data);
+                } else {
+                    mon.responded(data);
+                }
+            }
+        }
+    }
+
+    /**
+     * Will call any registered monitors from a synchronized context.
+     *
+     * @param exception The exception that occurred.
+     */
+    public static void oops(Exception exception) {
+        synchronized (monitors) {
+            for (Monitor mon : monitors) {
+                mon.oops(exception);
+            }
+        }
+    }
 
     /**
      * The main entry point of the application.
@@ -293,13 +363,12 @@ public class Ollama {
                 }
                 return getMapper().readValue(response.toString(), AvailableModels.class);
             } catch (Exception any) {
-                //TODO, ignore for now, most likely ollama is not running
-                //System.out.println("Endpoint " + url + " is not responding.");
-                //System.out.println("Error: " + any.getMessage());
+                oops(any);
             } finally {
                 con.disconnect();
             }
         } catch (Exception ex) {
+            oops(ex);
             Logger.getLogger(Ollama.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;

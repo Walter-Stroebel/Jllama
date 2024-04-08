@@ -370,10 +370,13 @@ public class OllamaChatFrame {
                 autoMode.set(((JCheckBox) ae.getSource()).isSelected());
             }
         }));
-        buttons.add(new JCheckBox(new AbstractAction("Debug") {
+        buttons.add(new JCheckBox(new AbstractAction("Monitor") {
             @Override
             public void actionPerformed(ActionEvent ae) {
-                client.setDebug(((JCheckBox) ae.getSource()).isSelected());
+                Ollama.deregisterMonitor(ChatFrameMonitor.NAME);
+                if (((JCheckBox) ae.getSource()).isSelected()) {
+                    Ollama.registerMonitor(new ChatFrameMonitor());
+                }
             }
         }));
         buttons.add(new JToolBar.Separator());

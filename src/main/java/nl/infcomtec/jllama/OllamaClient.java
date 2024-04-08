@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.awt.image.RenderedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -15,8 +13,6 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.LinkedList;
 import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 
 /**
@@ -28,7 +24,6 @@ public class OllamaClient {
     private static final String GENERATE = "/api/generate";
     private final String API_GENERATE;
     private final String endPoint;
-    private File debugFile = null;
 
     /**
      * A TreeMap to store the model sessions, mapped by their names.
@@ -54,24 +49,6 @@ public class OllamaClient {
             }
         }
         API_GENERATE = endPoint + GENERATE;
-    }
-
-    /**
-     * Enable or disable debug tracing.
-     *
-     * @param on True is on, false is off.
-     */
-    public void setDebug(boolean on) {
-        if (on) {
-            if (null == debugFile)
-            try {
-                debugFile = File.createTempFile("ollama", ".debug");
-            } catch (IOException ex) {
-                Logger.getLogger(OllamaClient.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        } else {
-            debugFile = null;
-        }
     }
 
     /**
@@ -230,11 +207,6 @@ public class OllamaClient {
         rq.model = model;
         rq.prompt = prompt;
         rq.context = getContext();
-        if (null != debugFile) {
-            try (FileWriter writer = new FileWriter(debugFile, true)) {
-                writer.write(mapper.writeValueAsString(rq));
-            }
-        }
         setReqImages(images, rq);
         String requestBody = mapper.writeValueAsString(rq);
         String response = sendRequest(requestBody);
@@ -366,12 +338,7 @@ public class OllamaClient {
      * @throws Exception If an error occurs during the request.
      */
     private String sendRequest(String requestBody) throws Exception {
-        if (null != debugFile) {
-            try (FileWriter writer = new FileWriter(debugFile, true)) {
-                writer.write("\nrequestBody:\n");
-                writer.write(requestBody);
-            }
-        }
+        Ollama.doMonitoring(true, requestBody);
         URL url = new URL(API_GENERATE);
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("POST");
@@ -389,12 +356,7 @@ public class OllamaClient {
             while ((responseLine = br.readLine()) != null) {
                 response.append(responseLine.trim());
             }
-            if (null != debugFile) {
-                try (FileWriter writer = new FileWriter(debugFile, true)) {
-                    writer.write("\nresponse:\n");
-                    writer.write(response.toString());
-                }
-            }
+            Ollama.doMonitoring(false, response.toString());
             return response.toString();
         } finally {
             con.disconnect();
@@ -412,12 +374,7 @@ public class OllamaClient {
      * @throws Exception If an error occurs during the request.
      */
     private Response sendRequestWithStreaming(String requestBody, StreamListener listener) throws Exception {
-        if (null != debugFile) {
-            try (FileWriter writer = new FileWriter(debugFile, true)) {
-                writer.write("\nrequestBody:\n");
-                writer.write(requestBody);
-            }
-        }
+        Ollama.doMonitoring(true, requestBody);
         URL url = new URL(API_GENERATE);
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("POST");
@@ -435,13 +392,8 @@ public class OllamaClient {
             StringBuilder fullResponse = new StringBuilder();
             while ((responseLine = br.readLine()) != null) {
                 if (!responseLine.trim().isEmpty()) {
+                    Ollama.doMonitoring(false, responseLine);
                     if (responseLine.startsWith("{\"error")) {
-                        if (null != debugFile) {
-                            try (FileWriter writer = new FileWriter(debugFile, true)) {
-                                writer.write("\nError:\n");
-                                writer.write(responseLine);
-                            }
-                        }
                         Response err = new Response();
                         err.context = new LinkedList<>();
                         err.createdAt = LocalDateTime.now();
@@ -461,12 +413,6 @@ public class OllamaClient {
                     }
                     Response val = mapper.readValue(responseLine, Response.class);
                     if (val.done) {
-                        if (null != debugFile) {
-                            try (FileWriter writer = new FileWriter(debugFile, true)) {
-                                writer.write("\nfullResponse:\n");
-                                writer.write(fullResponse.toString());
-                            }
-                        }
                         val.response = fullResponse.toString();
                         return val;
                     } else {
