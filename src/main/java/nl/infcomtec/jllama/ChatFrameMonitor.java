@@ -11,8 +11,13 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
 /**
- *
- * @author walter
+ * This class implements a GUI monitor for observing chat interaction metrics in
+ * real-time. It tracks statistics like input characters, output characters,
+ * context size, and response duration for each AI model used during the chat
+ * interactions. These statistics are visualized in a JFrame with custom drawing
+ * to represent the data graphically. The class demonstrates the use of AWT and
+ * Swing in a multi-threaded environment, synchronization of shared resources,
+ * and atomic references for thread-safe operations.
  */
 public class ChatFrameMonitor implements Monitor {
 
@@ -20,6 +25,10 @@ public class ChatFrameMonitor implements Monitor {
     private final TreeMap<String, Stats> stats = new TreeMap<>();
     private final JFrame frame;
 
+    /**
+     * Constructs a new ChatFrameMonitor instance, initializing the GUI
+     * components and making the frame visible.
+     */
     public ChatFrameMonitor() {
         frame = new JFrame(NAME);
         frame.setBounds(100, 100, 1000, 1000);
