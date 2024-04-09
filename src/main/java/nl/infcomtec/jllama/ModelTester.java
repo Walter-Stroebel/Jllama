@@ -66,13 +66,13 @@ public class ModelTester {
                                 fullTest.append(NL).append("- Pass ").append(i + 1);
                                 // parameters: model name, system prompt, prompt
                                 // this call does not maintain a context
-                                Response ans = client.direct(frame.model.getText(), null, test.passage.story + NL + q.text + NL);
+                                Response ans = client.direct(frame.model.getText(), "Give a short and succinct answer.", test.passage.story + NL + q.text + NL);
                                 fullTest.append(": ").append(ans.response).append(NL);
                                 StringBuilder forEval = new StringBuilder("Is the generated answer \"");
-                                forEval.append(ans.response.replace('"', '\''));
+                                forEval.append(noFormatting(ans.response));
                                 forEval.append("\" to the question \"").append(q.text.replace('"', '\''));
                                 forEval.append("\" semantically equivalent to the expected answer \"");
-                                forEval.append(q.answer.replace('"', '\'')).append("\"?");
+                                forEval.append(noFormatting(q.answer)).append("\"");
                                 evaluations.add(forEval.toString());
                             }
                         }
@@ -108,6 +108,17 @@ public class ModelTester {
         }
         frame.dispose();
         JOptionPane.showMessageDialog(null, eval);
+    }
+
+    /**
+     * Remove double quotes and line separators.
+     *
+     * @param ans Often an LLM's answer will contain quoted strings or line
+     * separators.
+     * @return The string with " replaced by ', NL and CR by space.
+     */
+    private static String noFormatting(String ans) {
+        return ans.replace('"', '\'').replace('\n', ' ').replace('\r', ' ');
     }
 
     private void runEvalLLM(LinkedList<String> evaluations) throws Exception {
