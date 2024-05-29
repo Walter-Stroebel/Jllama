@@ -20,7 +20,8 @@ public class ModalitySVG extends Modality {
 
         // Run ImageMagick
         try {
-            ProcessBuilder pb = new ProcessBuilder("convert", "svg:" + outputFile.getAbsolutePath(), pngOutputFile.getAbsolutePath());
+            ProcessBuilder pb = new ProcessBuilder("convert", "svg:" + outputFile.getAbsolutePath(),
+                    pngOutputFile.getAbsolutePath());
             pb.inheritIO();
             Process process = pb.start();
             process.waitFor();

@@ -17,6 +17,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -38,12 +40,14 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -122,7 +126,12 @@ public class OllamaChatFrame {
     /**
      * A flag indicating whether the application is in auto mode.
      */
-    private final AtomicBoolean autoMode = new AtomicBoolean(false);
+    private final AtomicBoolean autoMode = new AtomicBoolean(true);
+
+    /**
+     * A flag indicating whether Enter sends the current input content.
+     */
+    private final AtomicBoolean autoSend = new AtomicBoolean(false);
 
     /**
      * An executor service for running background tasks.
@@ -196,6 +205,7 @@ public class OllamaChatFrame {
         Container cont = frame.getContentPane();
         cont.setLayout(new BorderLayout());
         buttonBar();
+        createMenuBar();
         cont.add(buttons, BorderLayout.NORTH);
         chat.setLineWrap(true);
         chat.setWrapStyleWord(true);
@@ -237,7 +247,17 @@ public class OllamaChatFrame {
         input.setWrapStyleWord(true);
         bottom.add(new JScrollPane(input));
         bottom.add(Box.createHorizontalStrut(10));
-        bottom.add(new JButton(new Interact()));
+        final JButton send = new JButton(new Interact());
+        bottom.add(send);
+        input.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                super.keyReleased(e);
+                if (autoSend.get() && e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    send.doClick();
+                }
+            }
+        });
         bottom.add(new JButton(new AbstractAction("\u2191 image") {
             @Override
             public void actionPerformed(ActionEvent ae) {
@@ -296,13 +316,6 @@ public class OllamaChatFrame {
      * boxes.
      */
     private void buttonBar() {
-        buttons.add(new AbstractAction("Exit") {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
-                System.exit(0);
-            }
-        });
-        buttons.add(new JToolBar.Separator());
         String lsHost = Ollama.config.getLastEndpoint();
         for (String e : Ollama.getAvailableModels().keySet()) {
             addToHosts(e);
@@ -317,7 +330,7 @@ public class OllamaChatFrame {
         }
         models.invalidate();
         hosts.setSelectedItem(lsHost);
-        hosts.addActionListener(new AddSelectHost());
+        hosts.addActionListener(new AddSelectHostListener());
         hosts.setEditable(true);
         buttons.add(new JLabel("Hosts:"));
         buttons.add(hosts);
@@ -325,7 +338,27 @@ public class OllamaChatFrame {
         buttons.add(new JLabel("Models:"));
         buttons.add(models);
         buttons.add(new JToolBar.Separator());
-        buttons.add(new AbstractAction("HTML") {
+    }
+
+    /**
+     * Creates the application menu.
+     */
+    private void createMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+
+        // Exit Menu
+        JMenu fileMenu = new JMenu("File");
+        JMenuItem exitMenuItem = new JMenuItem("Exit");
+        exitMenuItem.addActionListener(new AbstractAction("Exit") {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                System.exit(0);
+            }
+        });
+        fileMenu.add(exitMenuItem);
+        menuBar.add(fileMenu);
+        JMenu actionMenu = new JMenu("Actions");
+        actionMenu.add(new JMenuItem(new AbstractAction("Show chat as HTML") {
             @Override
             public void actionPerformed(ActionEvent ae) {
                 String markDown = chat.getText();
@@ -348,50 +381,69 @@ public class OllamaChatFrame {
                 html.pack();
                 html.setVisible(true);
             }
-        });
-        buttons.add(new AbstractAction("Dall-E 3") {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
-                try {
-                    String text = chat.getSelectedText();
-                    DallEClient dale = new DallEClient(Ollama.config.openAIKey);
-                    ImageObject io = new ImageObject(dale.getImage(text));
-                    ImageViewer iv = new ImageViewer(io);
-                    iv.getScalePanFrame();
-                } catch (Exception ex) {
-                    Logger.getLogger(OllamaChatFrame.class.getName()).log(Level.SEVERE, null, ex);
-                }
+        }));
+        {
+            final String key = Ollama.config.openAIKey;
+            if (null != key) {
+                actionMenu.add(new JMenuItem(new AbstractAction("Send selected chat text to Dall-E 3") {
+                    @Override
+                    public void actionPerformed(ActionEvent ae) {
+                        try {
+                            String text = chat.getSelectedText();
+                            if (!text.isBlank()) {
+                                DallEClient dale = new DallEClient(key);
+                                ImageObject io = new ImageObject(dale.getImage(text));
+                                ImageViewer iv = new ImageViewer(io);
+                                iv.getScalePanFrame();
+                            }
+                        } catch (Exception ex) {
+                            Logger.getLogger(OllamaChatFrame.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }));
             }
-        });
-        buttons.add(new JToolBar.Separator());
-        buttons.add(new JCheckBox(new AbstractAction("Auto") {
+        }
+        {
+            JCheckBoxMenuItem item = new JCheckBoxMenuItem(new AbstractAction("Process chat output (function calling)") {
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    autoMode.set(((JCheckBoxMenuItem) ae.getSource()).isSelected());
+                }
+            });
+            item.setSelected(true);
+            actionMenu.add(item);
+        }
+
+        actionMenu.add(new JCheckBoxMenuItem(new AbstractAction("Auto Send on Enter") {
             @Override
             public void actionPerformed(ActionEvent ae) {
-                autoMode.set(((JCheckBox) ae.getSource()).isSelected());
+                autoSend.set(((JCheckBoxMenuItem) ae.getSource()).isSelected());
             }
         }));
-        buttons.add(new JCheckBox(new AbstractAction("Monitor") {
+        actionMenu.add(new JCheckBoxMenuItem(new AbstractAction("Monitor the interactions") {
             @Override
             public void actionPerformed(ActionEvent ae) {
                 Ollama.deregisterMonitor(ChatFrameMonitor.NAME);
-                if (((JCheckBox) ae.getSource()).isSelected()) {
+                if (((JCheckBoxMenuItem) ae.getSource()).isSelected()) {
                     Ollama.registerMonitor(new ChatFrameMonitor());
                 }
             }
         }));
-        buttons.add(new JToolBar.Separator());
-        buttons.add(new JButton(new AbstractAction("Knowledge") {
+        actionMenu.add(new JMenuItem(new AbstractAction("Knowledge Base System") {
             @Override
             public void actionPerformed(ActionEvent ae) {
                 KnowledgeBaseSystem.createAndShowKBFrame(frame, client);
             }
         }));
-        buttons.add(new JButton(new AbstractAction("Model test") {
+        actionMenu.add(new JMenuItem(new AbstractAction("Model testing (grade school reading test)") {
             @Override
             public void actionPerformed(ActionEvent ae) {
                 new ModelTester();
             }
         }));
+        menuBar.add(actionMenu);
+
+        frame.setJMenuBar(menuBar);
     }
 
     /**
@@ -609,7 +661,7 @@ public class OllamaChatFrame {
                                         if (mod.isGraphical) {
                                             new ModalityImage(pool, mod.getClass().getSimpleName(), mod);
                                         } else {
-                                            System.out.println(mod.getText());
+                                            //System.out.println(mod.getText());
                                             if (null != mod.getText()) {
                                                 askModel("\n\n### Tooling\n\n", mod.getText());
                                             }
@@ -658,9 +710,9 @@ public class OllamaChatFrame {
     /**
      * Listener for selecting a new host from the combo box.
      */
-    private class AddSelectHost implements ActionListener {
+    private class AddSelectHostListener implements ActionListener {
 
-        public AddSelectHost() {
+        public AddSelectHostListener() {
         }
 
         @Override
