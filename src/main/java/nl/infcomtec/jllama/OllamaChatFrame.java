@@ -24,6 +24,7 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -49,6 +50,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -210,8 +212,7 @@ public class OllamaChatFrame {
         chat.setLineWrap(true);
         chat.setWrapStyleWord(true);
         final JPopupMenu popupMenu = new JPopupMenu();
-        JMenuItem copy = new JMenuItem("Copy");
-        copy.addActionListener(new AbstractAction("Copy") {
+        JMenuItem copy = new JMenuItem(new AbstractAction("Copy") {
             @Override
             public void actionPerformed(ActionEvent ae) {
                 String selectedText = chat.getSelectedText();
@@ -346,17 +347,61 @@ public class OllamaChatFrame {
     private void createMenuBar() {
         JMenuBar menuBar = new JMenuBar();
 
-        // Exit Menu
+        // File Menu
         JMenu fileMenu = new JMenu("File");
-        JMenuItem exitMenuItem = new JMenuItem("Exit");
-        exitMenuItem.addActionListener(new AbstractAction("Exit") {
+        fileMenu.add(new JMenuItem(new AbstractAction("Save chat (selection)...") {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                JFileChooser fileChooser = new JFileChooser();
+
+                int returnValue = fileChooser.showSaveDialog(frame);
+
+                if (returnValue == JFileChooser.APPROVE_OPTION) {
+                    File selectedFile = fileChooser.getSelectedFile();
+                    try (PrintWriter out = new PrintWriter(selectedFile)) {
+                        String txt = chat.getSelectedText();
+                        if (null == txt) {
+                            txt = chat.getText();
+                        }
+                        out.print(txt);
+                        if (!txt.endsWith(System.lineSeparator())) {
+                            out.print(System.lineSeparator());
+                        }
+                    } catch (IOException e) {
+                        JOptionPane.showMessageDialog(frame,
+                                "Error while writing to file: " + e.getMessage(),
+                                "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        }));
+        fileMenu.add(new JMenuItem(new AbstractAction("Exit") {
             @Override
             public void actionPerformed(ActionEvent ae) {
                 System.exit(0);
             }
-        });
-        fileMenu.add(exitMenuItem);
+        }));
         menuBar.add(fileMenu);
+        // Edit Menu
+        JMenu editMenu = new JMenu("Edit");
+        editMenu.add(new JMenuItem(new AbstractAction("Clear chat") {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                chat.setText("");
+            }
+        }));
+        editMenu.add(new JMenuItem(new AbstractAction("Copy chat (selection)") {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                String selectedText = chat.getSelectedText();
+                if (null == selectedText) {
+                    selectedText = chat.getText();
+                }
+                Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                clipboard.setContents(new StringSelection(selectedText), null);
+            }
+        }));
+        menuBar.add(editMenu);
         JMenu actionMenu = new JMenu("Actions");
         actionMenu.add(new JMenuItem(new AbstractAction("Show chat as HTML") {
             @Override
