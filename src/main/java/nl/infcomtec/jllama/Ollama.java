@@ -261,7 +261,6 @@ public class Ollama {
      * more.
      */
     public static List<Modality> handleOutput(ExecutorService pool, String currentText) {
-        System.out.println("Parsing " + currentText);
         LinkedList<Modality> ret = new LinkedList<>();
         int[] uml = startsAndEndsWith(currentText, "@startuml", "@enduml"); // Check for plantUML content
         int[] svg = startsAndEndsWith(currentText, "<", "</svg>"); // check for SVG content

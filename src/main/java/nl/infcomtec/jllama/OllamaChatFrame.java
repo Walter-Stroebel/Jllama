@@ -706,7 +706,6 @@ public class OllamaChatFrame {
                                         if (mod.isGraphical) {
                                             new ModalityImage(pool, mod.getClass().getSimpleName(), mod);
                                         } else {
-                                            //System.out.println(mod.getText());
                                             if (null != mod.getText()) {
                                                 askModel("\n\n### Tooling\n\n", mod.getText());
                                             }
