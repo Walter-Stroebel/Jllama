@@ -82,6 +82,7 @@ public class Response extends StreamedResponse {
         sb.append("\n, response=").append(response);
         sb.append("\n, context=").append(context);
         sb.append("\n, done=").append(done);
+        sb.append("\n, doneReason=").append(doneReason);
         sb.append(", totalDuration=").append(totalDuration);
         sb.append(", loadDuration=").append(loadDuration);
         sb.append(", sampleCount=").append(sampleCount);

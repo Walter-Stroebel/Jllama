@@ -18,5 +18,7 @@ public class StreamedResponse {
      */
     public String response;
     public boolean done;
+    @JsonProperty(value = "done_reason")
+    public String doneReason;
 
 }

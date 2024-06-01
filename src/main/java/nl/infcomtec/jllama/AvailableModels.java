@@ -29,6 +29,8 @@ public class AvailableModels {
         public String model;
         @JsonProperty(value = "modified_at")
         public LocalDateTime modifiedAt;
+        @JsonProperty(value = "expires_at")
+        public LocalDateTime expiresAt;
         public long size;
         public String digest;
         public Details details;
@@ -40,6 +42,7 @@ public class AvailableModels {
             sb.append("name=").append(name);
             sb.append(", model=").append(model);
             sb.append(", modifiedAt=").append(modifiedAt);
+            sb.append(", expiresAt=").append(expiresAt);
             sb.append(", size=").append(size);
             sb.append(", digest=").append(digest);
             sb.append(", details=").append(details);

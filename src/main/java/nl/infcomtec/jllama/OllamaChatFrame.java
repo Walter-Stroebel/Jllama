@@ -146,6 +146,11 @@ public class OllamaChatFrame {
     private JLabel tokensSec;
 
     /**
+     * A label displaying the reason the model is done.
+     */
+    private JLabel doneReason;
+
+    /**
      * A label displaying the model family.
      */
     private JLabel modFamily;
@@ -265,7 +270,7 @@ public class OllamaChatFrame {
                 JFileChooser fileChooser = new JFileChooser();
 
                 int returnValue = fileChooser.showOpenDialog(frame);
-
+                uplImage = null;
                 if (returnValue == JFileChooser.APPROVE_OPTION) {
                     File selectedFile = fileChooser.getSelectedFile();
                     try {
@@ -281,19 +286,19 @@ public class OllamaChatFrame {
                         } else {
                             uplImage = originalImage;
                         }
-                        updateSideBar(null);
                     } catch (IOException ex) {
                         Logger.getLogger(OllamaChatFrame.class.getName()).log(Level.SEVERE, null, ex);
                         uplImage = null;
                     }
                 }
+                updateSideBar(null);
             }
         }));
         bottom.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(new Color(135, 206, 250), 5),
                 "Input"));
         cont.add(bottom, BorderLayout.SOUTH);
-        cont.add(sideBar(), BorderLayout.EAST);
+        cont.add(createSidePanel(), BorderLayout.EAST);
         frame.pack();
         if (EventQueue.isDispatchThread()) {
             finishInit();
@@ -388,6 +393,9 @@ public class OllamaChatFrame {
             @Override
             public void actionPerformed(ActionEvent ae) {
                 chat.setText("");
+                client.clear();
+                uplImage = null;
+                updateSideBar(null);
             }
         }));
         editMenu.add(new JMenuItem(new AbstractAction("Copy chat (selection)") {
@@ -514,12 +522,13 @@ public class OllamaChatFrame {
      *
      * @return The panel containing the model information labels.
      */
-    private JPanel sideBar() {
+    private JPanel createSidePanel() {
         JPanel ret = new JPanel();
         curCtxSize = new JLabel();
         outTokens = new JLabel();
         inTokens = new JLabel();
         tokensSec = new JLabel();
+        doneReason = new JLabel();
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         ret.setLayout(new GridBagLayout());
@@ -527,71 +536,68 @@ public class OllamaChatFrame {
         gbc.gridy = 0;
         ret.add(new JLabel("Context"), gbc);
         gbc.gridx = 1;
-        gbc.gridy = 0;
         ret.add(curCtxSize, gbc);
         gbc.gridx = 0;
         gbc.gridy = 1;
         ret.add(new JLabel("In tokens"), gbc);
         gbc.gridx = 1;
-        gbc.gridy = 1;
         ret.add(inTokens, gbc);
         gbc.gridx = 0;
         gbc.gridy = 2;
         ret.add(new JLabel("Out tokens"), gbc);
         gbc.gridx = 1;
-        gbc.gridy = 2;
         ret.add(outTokens, gbc);
         gbc.gridx = 0;
         gbc.gridy = 3;
         ret.add(new JLabel("Tokens/sec"), gbc);
         gbc.gridx = 1;
-        gbc.gridy = 3;
         ret.add(tokensSec, gbc);
-
         gbc.gridx = 0;
         gbc.gridy = 4;
+        ret.add(new JLabel("Done reason"), gbc);
+        gbc.gridx = 1;
+        ret.add(doneReason, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 5;
         ret.add(new JLabel("Family"), gbc);
         gbc.gridx = 1;
-        gbc.gridy = 4;
         ret.add(modFamily, gbc);
 
         gbc.gridx = 0;
-        gbc.gridy = 5;
+        gbc.gridy = 6;
         ret.add(new JLabel("Families"), gbc);
         gbc.gridx = 1;
-        gbc.gridy = 5;
         ret.add(modFamilies, gbc);
 
         gbc.gridx = 0;
-        gbc.gridy = 6;
+        gbc.gridy = 7;
         ret.add(new JLabel("Format"), gbc);
         gbc.gridx = 1;
-        gbc.gridy = 6;
         ret.add(modFormat, gbc);
 
         gbc.gridx = 0;
-        gbc.gridy = 7;
+        gbc.gridy = 8;
         ret.add(new JLabel("ParamSize"), gbc);
         gbc.gridx = 1;
-        gbc.gridy = 7;
         ret.add(modParmSize, gbc);
 
         gbc.gridx = 0;
-        gbc.gridy = 8;
+        gbc.gridy = 9;
         ret.add(new JLabel("Quantization"), gbc);
         gbc.gridx = 1;
-        gbc.gridy = 8;
         ret.add(modQuant, gbc);
 
         gbc.gridx = 0;
-        gbc.gridy = 9;
+        gbc.gridy = 10;
         ret.add(new JLabel("ParentModel"), gbc);
         gbc.gridx = 1;
-        gbc.gridy = 9;
         ret.add(modParMod, gbc);
 
         gbc.gridx = 0;
-        gbc.gridy = 10;
+        gbc.gridy = 11;
+        ret.add(new JLabel("Image"), gbc);
+        gbc.gridx = 1;
         ret.add(prevImage, gbc);
 
         ret.setBorder(BorderFactory.createTitledBorder(
@@ -607,6 +613,18 @@ public class OllamaChatFrame {
      * @param resp The response object containing the information to display.
      */
     private void updateSideBar(Response resp) {
+        modFamily.setText("");
+        modFamilies.setText("");
+        modFormat.setText("");
+        modParmSize.setText("");
+        modQuant.setText("");
+        modParMod.setText("");
+        curCtxSize.setText("");
+        outTokens.setText("");
+        inTokens.setText("");
+        tokensSec.setText("");
+        doneReason.setText("");
+        prevImage.setIcon(null);
         if (null != resp) {
             OllamaClient.ModelSession session = client.getSession();
             modFamily.setText(Objects.toString(session.model.details.family));
@@ -624,10 +642,14 @@ public class OllamaChatFrame {
             outTokens.setText(Integer.toString(resp.evalCount));
             inTokens.setText(Integer.toString(resp.promptEvalCount));
             tokensSec.setText(String.format("%.2f", 1e9 * resp.evalCount / resp.evalDuration));
+            if (null == resp.doneReason) {
+                doneReason.setText("");
+            } else {
+                doneReason.setText(resp.doneReason);
+            }
         }
-        if (null == uplImage) {
-            prevImage.setIcon(null);
-        } else {
+        if (null != uplImage) {
+            System.out.println("Setting sidebar image " + (null == resp));
             prevImage.setIcon(new ImageIcon(uplImage));
         }
     }

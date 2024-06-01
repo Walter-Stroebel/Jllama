@@ -1,5 +1,6 @@
 package nl.infcomtec.jllama;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -310,6 +311,7 @@ public class Ollama {
         module.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(formatter));
         module.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(formatter));
         mapper.registerModule(module);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return mapper;
     }
 

@@ -14,12 +14,6 @@ public class KnowledgeBaseSystem {
     public static final File KBFolder = new File(Ollama.WORK_DIR, "KB");
     public static final ObjectMapper mapper = Ollama.getMapper();
     public static final String createTitle = "Create a short title for this session.";
-    public static final String createKB1 = "Do you best to output NEW knowledge from this session for future sessions "
-            + "in a form that makes sense for YOU (this LLM and its current foundation model).\n"
-            + "Think of this as stripping everything from your current session based knowledge "
-            + "that IS already in the foundation model you have, leaving a terse but \"connected\" "
-            + "block of information that will gift your current knowledge to a new invocation of the this LLM.\n"
-            + "The intent is to create \"text based\" embedding of your current context buffer or a \"Knowledge Block\".\n";
     public static final String createKB = "Reflecting on our specific discussion so far,"
             + " please synthesize the unique insights or conclusions we've drawn"
             + " that extend beyond your pre-existing knowledge base."
@@ -34,11 +28,13 @@ public class KnowledgeBaseSystem {
 
         public String title;
         public String content;
+        public Long created, lastMod;
         public String[] keywords;
         public String[] related;
 
         // Constructor for creating a new KB from an OllamaClient session
         public KnowledgeBlock(OllamaClient client) throws Exception {
+            this.created = this.lastMod = System.currentTimeMillis();
             this.title = client.execute(createTitle);
             this.content = client.execute(createKB);
             this.keywords = new String[]{};
@@ -47,7 +43,17 @@ public class KnowledgeBaseSystem {
 
         // Constructor for loading a KB from a file
         public KnowledgeBlock(String filename) throws IOException {
-            KnowledgeBlock kb = mapper.readValue(new File(KBFolder, filename), KnowledgeBlock.class);
+            File f = new File(KBFolder, filename);
+            KnowledgeBlock kb = mapper.readValue(
+                    f,
+                    KnowledgeBlock.class);
+            this.created = this.lastMod = f.lastModified();
+            if (null != kb.created) {
+                this.created = kb.created;
+            }
+            if (null != kb.lastMod) {
+                this.lastMod = kb.lastMod;
+            }
             this.title = kb.title;
             this.content = kb.content;
             this.keywords = kb.keywords;
@@ -63,7 +69,10 @@ public class KnowledgeBaseSystem {
 
         // Method to save the KB to a file
         public void save(String filename) throws IOException {
-            mapper.writeValue(new File(KBFolder, filename), this);
+            File f = new File(KBFolder, filename);
+            lastMod = System.currentTimeMillis();
+            mapper.writeValue(f, this);
+            f.setLastModified(created);
         }
     }
 
