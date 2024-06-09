@@ -1,0 +1,3 @@
+[submodule "src/main/java/nl.infcomtec.simpleimage"]
+	path = src/main/java/nl.infcomtec.simpleimage
+	url = git@github.com:Walter-Stroebel/SimpleImage.git
