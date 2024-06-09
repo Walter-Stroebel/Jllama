@@ -26,7 +26,7 @@ import nl.infcomtec.jllama.Response;
 public class DataDrop implements Comparable<DataDrop> {
 
     /**
-     * Unsigned fixed radix 36.
+     * Unsigned fixed-length radix 32.
      *
      * @param l value
      * @return radix 32 representation as 13 characters.
