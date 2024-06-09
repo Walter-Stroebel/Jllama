@@ -7,3 +7,6 @@
 [submodule "src/main/java/nl/infcomtec/advswing"]
 	path = src/main/java/nl/infcomtec/advswing
 	url = git@github.com:Walter-Stroebel/AdvSwing.git
+[submodule "src/main/java/nl/infcomtec/tools"]
+	path = src/main/java/nl/infcomtec/tools
+	url = git@github.com:Walter-Stroebel/Tools.git
