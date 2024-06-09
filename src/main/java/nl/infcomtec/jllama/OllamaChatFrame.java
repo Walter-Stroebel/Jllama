@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
@@ -188,7 +189,11 @@ public class OllamaChatFrame {
     /**
      * The previously uploaded image.
      */
-    private BufferedImage uplImage;
+    private final AtomicReference<BufferedImage> uplImage = new AtomicReference<>();
+    /**
+     * Last directory used to upload image from.
+     */
+    private File lastImageDir = null;
 
     /**
      * Ties all the bits and pieces together into a GUI.
@@ -268,11 +273,14 @@ public class OllamaChatFrame {
             @Override
             public void actionPerformed(ActionEvent ae) {
                 JFileChooser fileChooser = new JFileChooser();
-
+                if (null != lastImageDir) {
+                    fileChooser.setCurrentDirectory(lastImageDir);
+                }
                 int returnValue = fileChooser.showOpenDialog(frame);
-                uplImage = null;
+                uplImage.set(null);
                 if (returnValue == JFileChooser.APPROVE_OPTION) {
                     File selectedFile = fileChooser.getSelectedFile();
+                    lastImageDir = selectedFile.getParentFile();
                     try {
                         BufferedImage originalImage = ImageIO.read(selectedFile);
 
@@ -282,13 +290,13 @@ public class OllamaChatFrame {
                             Graphics2D g2d = resizedImage.createGraphics();
                             g2d.drawImage(scaledInstance, 0, 0, null);
                             g2d.dispose();
-                            uplImage = resizedImage;
+                            uplImage.set(resizedImage);
                         } else {
-                            uplImage = originalImage;
+                            uplImage.set(originalImage);
                         }
                     } catch (IOException ex) {
                         Logger.getLogger(OllamaChatFrame.class.getName()).log(Level.SEVERE, null, ex);
-                        uplImage = null;
+                        uplImage.set(null);
                     }
                 }
                 updateSideBar(null);
@@ -394,7 +402,7 @@ public class OllamaChatFrame {
             public void actionPerformed(ActionEvent ae) {
                 chat.setText("");
                 client.clear();
-                uplImage = null;
+                uplImage.set(null);
                 updateSideBar(null);
             }
         }));
@@ -648,9 +656,9 @@ public class OllamaChatFrame {
                 doneReason.setText(resp.doneReason);
             }
         }
-        if (null != uplImage) {
+        if (null != uplImage.get()) {
             System.out.println("Setting sidebar image " + (null == resp));
-            prevImage.setIcon(new ImageIcon(uplImage));
+            prevImage.setIcon(new ImageIcon(uplImage.get()));
         }
     }
 
@@ -751,7 +759,7 @@ public class OllamaChatFrame {
 
                     @Override
                     protected Response doInBackground() throws Exception {
-                        if (null == uplImage) {
+                        if (null == uplImage.get()) {
                             Response resp = client.askWithStream(
                                     (String) models.getSelectedItem(),
                                     question,
@@ -762,7 +770,7 @@ public class OllamaChatFrame {
                                     (String) models.getSelectedItem(),
                                     question,
                                     listener,
-                                    uplImage);
+                                    uplImage.get());
                             return resp;
                         }
                     }
