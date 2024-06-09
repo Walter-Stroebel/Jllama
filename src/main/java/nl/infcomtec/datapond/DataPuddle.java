@@ -9,7 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * DataPond as an object, just encapsulates the directory and model.
+ * DataDrop as an object, just encapsulates the directory and model.
  *
  * @author walter
  */
@@ -25,7 +25,7 @@ public class DataPuddle {
 
     public DataDrop from(BufferedImage img) {
         try {
-            return DataPond.fromImage(workDir, img);
+            return DataDrop.fromImage(workDir, img);
         } catch (Exception ex) {
             Logger.getLogger(DataPuddle.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -34,7 +34,7 @@ public class DataPuddle {
 
     public DataDrop from(String text) {
         try {
-            return DataPond.fromText(workDir, text);
+            return DataDrop.fromText(workDir, text);
         } catch (Exception ex) {
             Logger.getLogger(DataPuddle.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -43,7 +43,7 @@ public class DataPuddle {
 
     public DataDrop from(File imgFile) {
         try {
-            return DataPond.fromImageFile(workDir, imgFile);
+            return DataDrop.fromImageFile(workDir, imgFile);
         } catch (Exception ex) {
             Logger.getLogger(DataPuddle.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -52,7 +52,7 @@ public class DataPuddle {
 
     public DataDrop summary(String text) {
         try {
-            return DataPond.summary(workDir, model, text);
+            return DataDrop.summary(workDir, model, text);
         } catch (Exception ex) {
             Logger.getLogger(DataPuddle.class.getName()).log(Level.SEVERE, null, ex);
         }

@@ -8,6 +8,8 @@ import java.io.File;
 import java.util.UUID;
 import javax.imageio.ImageIO;
 import nl.infcomtec.jllama.Ollama;
+import nl.infcomtec.jllama.OllamaClient;
+import nl.infcomtec.jllama.Response;
 
 /**
  * A DataDrop is some related information in any possible digital formats.
@@ -107,6 +109,77 @@ public class DataDrop implements Comparable<DataDrop> {
      */
     public static DataDrop load(File file) throws Exception {
         return Ollama.getMapper().readValue(file, DataDrop.class);
+    }
+
+    /**
+     * Create a DataDrop from a loaded image.
+     *
+     * @param workDir Where the pond is.
+     * @param img Image as loaded.
+     * @return A DataDrop.
+     * @throws Exception When things do not work.
+     */
+    public static DataDrop fromImage(File workDir, BufferedImage img) throws Exception {
+        OllamaClient client = new OllamaClient(Ollama.config.lastEndpoint);
+        Response ans = client.askAndAnswer("llava", "Describe this image", img);
+        DataDrop ret = new DataDrop();
+        ret.addImage(workDir, img, ans.response);
+        return ret;
+    }
+
+    /**
+     * Create a DataDrop from an image file.
+     *
+     * @param workDir Where the pond is.
+     * @param imgFile To load the image from.
+     * @return A DataDrop.
+     * @throws Exception When things do not work.
+     */
+    public static DataDrop fromImageFile(File workDir, File imgFile) throws Exception {
+        return DataDrop.fromImage(workDir, ImageIO.read(imgFile));
+    }
+
+    /**
+     * Create a DataDrop straight from text.
+     *
+     * @param workDir Where the pond is.
+     * @param text To store in the drop.
+     * @return A DataDrop.
+     * @throws Exception When things do not work.
+     */
+    public static DataDrop fromText(File workDir, String text) throws Exception {
+        DataDrop ret = new DataDrop();
+        ret.text = text;
+        ret.save(workDir);
+        return ret;
+    }
+
+    /**
+     * Create a DataDrop that is a summary of the text.
+     *
+     * @param workDir Where the pond is.
+     * @param text To summarize in the drop.
+     * @return A DataDrop.
+     * @throws Exception When things do not work.
+     */
+    public static DataDrop summary(File workDir, String text) throws Exception {
+        return summary(workDir, Ollama.config.lastModel, text);
+    }
+
+    /**
+     * Create a DataDrop that is a summary of the text.
+     *
+     * @param workDir Where the pond is.
+     * @param model Use a specific model.
+     * @param text To summarize in the drop.
+     * @return A DataDrop.
+     * @throws Exception When things do not work.
+     */
+    public static DataDrop summary(File workDir, String model, String text) throws Exception {
+        OllamaClient client = new OllamaClient(Ollama.config.lastEndpoint);
+        Response ans = client.askAndAnswer(model, "Please summarize the following:" + System.lineSeparator() + text);
+        DataDrop ret = fromText(workDir, ans.response);
+        return ret;
     }
     /**
      * The unique key
