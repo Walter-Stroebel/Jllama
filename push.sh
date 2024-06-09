@@ -17,6 +17,12 @@ git add .
 git commit -m"Saved"
 git push
 popd
+pushd src/main/java/nl/infcomtec/tools
+git pull
+git add .
+git commit -m"Saved"
+git push
+popd
 git pull
 git add .
 git commit -m"Saved"
