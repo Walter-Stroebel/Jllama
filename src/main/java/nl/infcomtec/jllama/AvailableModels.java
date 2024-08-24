@@ -32,6 +32,8 @@ public class AvailableModels {
         @JsonProperty(value = "expires_at")
         public LocalDateTime expiresAt;
         public long size;
+        @JsonProperty(value = "size_vram")
+        public long sizeVRAM;
         public String digest;
         public Details details;
 
@@ -44,6 +46,7 @@ public class AvailableModels {
             sb.append(", modifiedAt=").append(modifiedAt);
             sb.append(", expiresAt=").append(expiresAt);
             sb.append(", size=").append(size);
+            sb.append(", sizeVRAM=").append(sizeVRAM);
             sb.append(", digest=").append(digest);
             sb.append(", details=").append(details);
             sb.append('}');
