@@ -1,5 +1,6 @@
 package nl.infcomtec.jllama;
 
+import com.formdev.flatlaf.FlatDarculaLaf;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
@@ -199,7 +200,7 @@ public class OllamaChatFrame {
      * Ties all the bits and pieces together into a GUI.
      */
     public OllamaChatFrame() {
-        Ollama.setupGUI();
+        FlatDarculaLaf.setup();
         this.modQuant = new JLabel();
         this.modParMod = new JLabel();
         this.modParmSize = new JLabel();
