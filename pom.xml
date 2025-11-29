@@ -40,7 +40,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <exec.mainClass>nl.infcomtec.ollama.Ollama</exec.mainClass>
+        <exec.mainClass>nl.infcomtec.jllama.Ollama</exec.mainClass>
     </properties>
     <build>
         <plugins>

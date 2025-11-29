@@ -68,10 +68,10 @@ public class MixOfExperts {
             + " and insights to offer a perspective that is richly informed by the past:\n";
 
     /**
-     * A prompt for the anthropology expert, setting the context and
+     * A prompt for the anthropologist expert, setting the context and
      * expectations for their response.
      */
-    public final static String antropologist = "As a specialist in anthropology, your expertise extends"
+    public final static String anthropologist = "As a specialist in anthropology, your expertise extends"
             + " from the dawn of humankind to the present, encompassing the vast spectrum of human"
             + " existence, cultures, and behaviors. Your focus is not just on what humans have done,"
             + " but also on what it means to be human in diverse contexts. With a deep understanding"

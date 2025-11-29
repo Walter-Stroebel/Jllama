@@ -334,6 +334,9 @@ public class OllamaChatFrame {
         String lsHost = Ollama.config.getLastEndpoint();
         for (String e : Ollama.getAvailableModels().keySet()) {
             addToHosts(e);
+            if (null == lsHost) {
+                lsHost = e;
+            }
         }
         client = new OllamaClient(lsHost);
         models.removeAllItems();
