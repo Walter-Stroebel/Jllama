@@ -100,7 +100,7 @@ public class Ollama {
      * Register a monitor.
      *
      * @param name The name of a previously registered monitor. Any registered
-     * monitor with that exact name will be de-registered.
+     *             monitor with that exact name will be de-registered.
      */
     public static void deregisterMonitor(String name) {
         synchronized (monitors) {
@@ -121,8 +121,8 @@ public class Ollama {
     /**
      * Will call any registered monitors from a synchronized context.
      *
-     * @param req If true the data should be an API request, else an API
-     * response.
+     * @param req  If true the data should be an API request, else an API
+     *             response.
      * @param data Either a request or a response.
      */
     public static void doMonitoring(boolean req, String data) {
@@ -172,7 +172,7 @@ public class Ollama {
                 config = getMapper().readValue(configFile, OllamaConfig.class);
             }
             if (null == config.ollamas) {
-                config.ollamas = new String[]{LOCAL_ENDPOINT};
+                config.ollamas = new String[] { LOCAL_ENDPOINT };
                 config.update();
             }
         } catch (Exception any) {
@@ -185,7 +185,7 @@ public class Ollama {
             config.w = 1000;
             config.h = 700;
             config.fontSize = 18;
-            config.ollamas = new String[]{LOCAL_ENDPOINT};
+            config.ollamas = new String[] { LOCAL_ENDPOINT };
             config.update();
         }
         if (null == config.openAIKey || config.openAIKey.isEmpty()) {
@@ -205,11 +205,11 @@ public class Ollama {
     /**
      * Find the start and end indices of a substring within a given string.
      *
-     * @param text The input string.
+     * @param text  The input string.
      * @param start The start marker.
-     * @param end The end marker.
+     * @param end   The end marker.
      * @return An array containing the start and end indices, or null if not
-     * found.
+     *         found.
      */
     private static int[] startsAndEndsWith(String text, String start, String end) {
         int startIndex = text.indexOf(start);
@@ -221,22 +221,26 @@ public class Ollama {
         if (endIndex == -1) {
             return null;
         }
-        return new int[]{startIndex, endIndex + end.length()};
+        return new int[] { startIndex, endIndex + end.length() };
     }
 
     /**
      * This function will check the output from the LLM for special cases.
      * <dl>
-     * <dt>PlantUML</dt><dd>Anything between @startuml and @enduml</dd>
-     * <dt>SVG</dt><dd>Anything between &lt;svg and &lt;/svg&gt;</dd>
-     * <dt>GraphViz</dt><dd>Anything between digraph and }</dd>
-     * <dt>System commands</dt><dd>Anything between $@ and @$</dd>
+     * <dt>PlantUML</dt>
+     * <dd>Anything between @startuml and @enduml</dd>
+     * <dt>SVG</dt>
+     * <dd>Anything between &lt;svg and &lt;/svg&gt;</dd>
+     * <dt>GraphViz</dt>
+     * <dd>Anything between digraph and }</dd>
+     * <dt>System commands</dt>
+     * <dd>Anything between $@ and @$</dd>
      * </dl>
      *
-     * @param pool The service that will run the threads.
+     * @param pool        The service that will run the threads.
      * @param currentText Text to scan.
      * @return A list of Modality instances, usually zero or one but can be
-     * more.
+     *         more.
      */
     public static List<Modality> handleOutput(ExecutorService pool, String currentText) {
         LinkedList<Modality> ret = new LinkedList<>();
@@ -263,10 +267,10 @@ public class Ollama {
     /**
      * Handle the remaining text after extracting a special case.
      *
-     * @param pool The service that will run the threads.
-     * @param ret The list of Modality instances to add to.
+     * @param pool        The service that will run the threads.
+     * @param ret         The list of Modality instances to add to.
      * @param currentText The original text.
-     * @param se The start and end indices of the extracted special case.
+     * @param se          The start and end indices of the extracted special case.
      */
     private static void handleRest(ExecutorService pool, LinkedList<Modality> ret, String currentText, int[] se) {
         StringBuilder cat = new StringBuilder(currentText);
@@ -325,7 +329,7 @@ public class Ollama {
      *
      * @param endPoint The endpoint to fetch from.
      * @return The available models metadata, or null if the endpoint is not
-     * responding.
+     *         responding.
      */
     public static AvailableModels fetchAvailableModels(String endPoint) {
         try {
