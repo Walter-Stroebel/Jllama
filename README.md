@@ -35,3 +35,8 @@ class diagram from code you described or were working on with the model.
 [here on GitHub](https://github.com/Walter-Stroebel/Embedding). **Update 24-02-24**: With Ollama 0.1.26 we got Nomic-embed-text, see Nomic.java for some simple tests.
 - **RAG:** Retrieval Augmented Generation. Basically, give the LLM memory. This is mostly experimental.
 
+## 2026-01-04
+Because Git does not provide first-class support for source-level modules,
+the project was normalized by inlining previously external source trees.
+This simplifies builds and repository handling at the cost of possible
+future code duplication across projects.

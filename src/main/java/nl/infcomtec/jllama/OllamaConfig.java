@@ -3,6 +3,7 @@ package nl.infcomtec.jllama;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.awt.Rectangle;
 import java.io.IOException;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,6 +24,7 @@ public class OllamaConfig {
     public String lastEndpoint;
     public String lastModel;
     public String openAIKey;
+    public Map nvps;
 
     public void update(Rectangle bounds) {
         x = bounds.x;
