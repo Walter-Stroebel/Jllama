@@ -1,9 +1,6 @@
 [submodule "src/main/java/nl/infcomtec/simpleimage"]
 	path = src/main/java/nl/infcomtec/simpleimage
 	url = git@github.com:Walter-Stroebel/SimpleImage.git
-[submodule "src/main/java/nl/infcomtec/datapond"]
-	path = src/main/java/nl/infcomtec/datapond
-	url = git@github.com:Walter-Stroebel/DataPond.git
 [submodule "src/main/java/nl/infcomtec/advswing"]
 	path = src/main/java/nl/infcomtec/advswing
 	url = git@github.com:Walter-Stroebel/AdvSwing.git
